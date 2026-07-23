@@ -13,6 +13,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LabAcacia.NPS.Core"        Version="1.0.0-alpha.15" />
     <PackageReference Include="LabAcacia.NPS.NWP"         Version="1.0.0-alpha.15" />
     <PackageReference Include="LabAcacia.NPS.NWP.Anchor"  Version="1.0.0-alpha.15" />
