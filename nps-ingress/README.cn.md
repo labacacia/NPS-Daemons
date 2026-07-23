@@ -8,10 +8,10 @@
 > DDoS 防护。完整六-daemon 拓扑见
 > [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
 
-## 状态 —— v1.0.0-alpha.15 包，alpha.15 release 边界
+## 状态 —— v1.0.0-alpha.16 包，alpha.16 release 边界
 
 **已发布 OSS baseline。** 公网 HTTP 监听 + `/health` 端点（端点本身记录后续里程碑）。
-alpha.15 release 文档在 SDK/spec 层面对齐 native NCP TLS/mTLS 合约；daemon
+alpha.16 release 文档在 SDK/spec 层面对齐 native NCP TLS/mTLS 合约；daemon
 端点接线，以及限速、鉴权、CGN 扣款、声誉查询、
 [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md) Anchor Node 中间件
 接入仍是后续工作。
@@ -36,8 +36,8 @@ curl -s http://localhost:8080/health | jq
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.15 .
-docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.15
+docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.16 .
+docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.16
 ```
 
 ## 配置（环境变量）

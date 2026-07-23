@@ -19,7 +19,7 @@ layers of the standard NPS deployment topology.
 
 ## What's in this repo
 
-| Layer | Daemon | Default port | Status at `v1.0.0-alpha.15` |
+| Layer | Daemon | Default port | Status at `v1.0.0-alpha.16` |
 |-------|--------|--------------|----------------------------|
 | 1 | [`npsd`](./npsd/) | `127.0.0.1:17433` | L1 minimum: HTTP listener, root keypair generation (POSIX `0600`), `/.nwm`, `/health`. |
 | 1 | [`nps-runner`](./nps-runner/) | — (worker) | Phase 1 skeleton — Generic Host scaffolding + 30 s heartbeat. Inbox watcher + spawn-spec resolver land alpha.11+. |
@@ -71,8 +71,8 @@ Each subdirectory ships a self-contained Dockerfile:
 
 ```bash
 cd npsd
-docker build -t labacacia/npsd:1.0.0-alpha.15 .
-docker run --rm -p 17433:17433 -v npsd-data:/data labacacia/npsd:1.0.0-alpha.15
+docker build -t labacacia/npsd:1.0.0-alpha.16 .
+docker run --rm -p 17433:17433 -v npsd-data:/data labacacia/npsd:1.0.0-alpha.16
 ```
 
 The .NET 10 SDK works for source builds too:
@@ -94,12 +94,12 @@ Self-contained native packages — no .NET runtime required — are published as
 the Docker images. Each package installs a systemd service (Linux) or a Windows service
 registered under a virtual `NT SERVICE\<daemon>` account.
 
-Replace `1.0.0-alpha.15` with the current release tag as needed.
+Replace `1.0.0-alpha.16` with the current release tag as needed.
 
 ### Ubuntu / Debian (amd64)
 
 ```bash
-VER=1.0.0-alpha.15
+VER=1.0.0-alpha.16
 for pkg in npsd nps-runner nps-ingress nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${VER}/${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
     sudo dpkg -i "${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
@@ -110,7 +110,7 @@ Or install only the daemons you need, e.g.:
 
 ```bash
 VER=1.0.0~alpha.13   # Debian version format (~ replaces -)
-curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.15/npsd_${VER}_amd64.deb"
+curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.16/npsd_${VER}_amd64.deb"
 sudo dpkg -i "npsd_${VER}_amd64.deb"
 sudo systemctl status npsd
 ```
@@ -122,7 +122,7 @@ Data directory: `/var/lib/nps/npsd/` (owned by system user `npsd`)
 ### Fedora / RHEL (x86_64)
 
 ```bash
-VER=1.0.0-alpha.15
+VER=1.0.0-alpha.16
 RPM_VER=1.0.0
 RPM_REL=0.alpha.6.1
 for pkg in npsd nps-runner nps-ingress nps-registry; do
@@ -141,7 +141,7 @@ Data directory: `/var/lib/nps/npsd/` (owned by system user `npsd`)
 ### Windows (x64, MSI)
 
 ```powershell
-$ver = "1.0.0-alpha.15"
+$ver = "1.0.0-alpha.16"
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
     Invoke-WebRequest -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" -OutFile $file

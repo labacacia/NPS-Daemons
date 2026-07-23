@@ -57,7 +57,7 @@ app.MapGet("/health", (INdpRegistry reg) =>
     {
         status    = "ok",
         daemon    = "nps-registry",
-        version   = "1.0.0-alpha.15",
+        version   = "1.0.0-alpha.16",
         layer     = 2,
         role      = "cross-machine NDP discovery",
         phase     = 2,
@@ -164,7 +164,7 @@ app.MapGet("/v1/graph", (SqliteNdpRegistry reg) =>
 });
 
 app.Logger.LogInformation(
-    "nps-registry v1.0.0-alpha.15 starting on port 17436 (SQLite registry; storage={Storage}; see docs/daemons/architecture.md)",
+    "nps-registry v1.0.0-alpha.16 starting on port 17436 (SQLite registry; storage={Storage}; see docs/daemons/architecture.md)",
     string.IsNullOrEmpty(sqlitePath) ? "in-memory" : sqlitePath);
 
 app.Run();

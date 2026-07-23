@@ -7,17 +7,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>npsd</AssemblyName>
     <RootNamespace>NPS.Daemon.Npsd</RootNamespace>
-    <Version>1.0.0-alpha.15</Version>
+    <Version>1.0.0-alpha.16</Version>
     <Description>NPS Daemon — Layer 1 host-local NCP wire + state host (npsd). Holds the host's root Ed25519 keypair, issues sub-NIDs to local agents, runs the per-host session registry and inbox queue, and exposes the unified port 17433.</Description>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LabAcacia.NPS.Core"                  Version="1.0.0-alpha.15" />
-    <PackageReference Include="LabAcacia.NPS.NIP"                   Version="1.0.0-alpha.15" />
-    <PackageReference Include="LabAcacia.NPS.NDP"                   Version="1.0.0-alpha.15" />
-    <PackageReference Include="LabAcacia.NPS.NWP"                   Version="1.0.0-alpha.15" />
-    <PackageReference Include="LabAcacia.NPS.Daemon.Observability"  Version="1.0.0-alpha.15" />
+    <PackageReference Include="LabAcacia.NPS.Core"                  Version="1.0.0-alpha.16" />
+    <PackageReference Include="LabAcacia.NPS.NIP"                   Version="1.0.0-alpha.16" />
+    <PackageReference Include="LabAcacia.NPS.NDP"                   Version="1.0.0-alpha.16" />
+    <PackageReference Include="LabAcacia.NPS.NWP"                   Version="1.0.0-alpha.16" />
+    <PackageReference Include="LabAcacia.NPS.Daemon.Observability"  Version="1.0.0-alpha.16" />
     <PackageReference Include="Microsoft.Data.Sqlite"               Version="10.0.0" />
   </ItemGroup>
 

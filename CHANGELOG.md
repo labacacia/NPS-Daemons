@@ -8,6 +8,13 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [1.0.0-alpha.16] — 2026-07-23
+
+### Changed
+
+- Suite-wide alpha.16 sync: aligned package metadata, current README/version banners, distribution source trees, and release-prep notes after alpha.15 was already published.
+- Carries the nps-ingress and nps-runner distribution test-isolation fix from the source-of-truth tree.
+
 ## [1.0.0-alpha.15] — 2026-06-28
 
 ### Changed

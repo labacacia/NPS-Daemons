@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>nps-runner</AssemblyName>
     <RootNamespace>NPS.Daemon.Runner</RootNamespace>
-    <Version>1.0.0-alpha.15</Version>
+    <Version>1.0.0-alpha.16</Version>
     <Description>NPS Daemon — Layer 1 task scheduler / FaaS runtime (nps-runner). Watches the npsd inbox for messages to ephemeral-mode NIDs and spawns the corresponding worker subprocesses per the NID's spawn-spec. L3 stage.</Description>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
@@ -19,8 +19,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
-    <PackageReference Include="LabAcacia.NPS.Core" Version="1.0.0-alpha.15" />
-    <PackageReference Include="LabAcacia.NPS.NOP"  Version="1.0.0-alpha.15" />
+    <PackageReference Include="LabAcacia.NPS.Core" Version="1.0.0-alpha.16" />
+    <PackageReference Include="LabAcacia.NPS.NOP"  Version="1.0.0-alpha.16" />
   </ItemGroup>
 
 </Project>

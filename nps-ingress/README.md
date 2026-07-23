@@ -10,10 +10,10 @@ English | [中文版](./README.cn.md)
 > [`docs/daemons/architecture.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
-## Status — v1.0.0-alpha.15 package, alpha.15 release boundary
+## Status — v1.0.0-alpha.16 package, alpha.16 release boundary
 
 **Published OSS baseline.** Public-facing HTTP listener with a `/health`
-endpoint that documents the planned milestones. The alpha.15 release docs
+endpoint that documents the planned milestones. The alpha.16 release docs
 align the native NCP TLS/mTLS contract at the SDK/spec layer; daemon endpoint
 wiring plus rate limit, auth, CGN debit, reputation lookup, and Anchor Node
 middleware wiring per [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md)
@@ -43,8 +43,8 @@ curl -s http://localhost:8080/health | jq
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.15 .
-docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.15
+docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.16 .
+docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.16
 ```
 
 ## Configuration (env vars)

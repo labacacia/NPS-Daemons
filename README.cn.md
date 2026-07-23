@@ -18,7 +18,7 @@
 
 ## 仓库内容
 
-| 层 | Daemon | 默认端口 | `v1.0.0-alpha.15` 状态 |
+| 层 | Daemon | 默认端口 | `v1.0.0-alpha.16` 状态 |
 |----|--------|----------|------------------------|
 | 1 | [`npsd`](./npsd/) | `127.0.0.1:17433` | L1 最小集：HTTP 监听、root keypair 生成（POSIX `0600`）、`/.nwm`、`/health`。|
 | 1 | [`nps-runner`](./nps-runner/) | —（worker）| Phase 1 骨架 —— Generic Host 脚手架 + 30 秒心跳。Inbox 监听 + spawn-spec 解析在 alpha.11+。|
@@ -69,8 +69,8 @@ docker compose up -d npsd
 
 ```bash
 cd npsd
-docker build -t labacacia/npsd:1.0.0-alpha.15 .
-docker run --rm -p 17433:17433 -v npsd-data:/data labacacia/npsd:1.0.0-alpha.15
+docker build -t labacacia/npsd:1.0.0-alpha.16 .
+docker run --rm -p 17433:17433 -v npsd-data:/data labacacia/npsd:1.0.0-alpha.16
 ```
 
 源码构建也行（需要 .NET 10 SDK）：
@@ -90,14 +90,14 @@ dotnet run
 无需 .NET 运行时，开箱即用。Linux 安装包注册 systemd 服务；Windows MSI 通过
 `NT SERVICE\<daemon>` 虚拟账户注册 Windows 服务。
 
-版本号 `1.0.0-alpha.15` 替换为当前发布版本即可。
+版本号 `1.0.0-alpha.16` 替换为当前发布版本即可。
 
 ### Ubuntu / Debian（amd64）
 
 ```bash
 VER=1.0.0~alpha.13   # Debian 版本格式（用 ~ 分隔预发布）
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.15/${pkg}_${VER}_amd64.deb"
+    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.16/${pkg}_${VER}_amd64.deb"
     sudo dpkg -i "${pkg}_${VER}_amd64.deb"
 done
 ```
@@ -109,7 +109,7 @@ done
 ### Fedora / RHEL（x86_64）
 
 ```bash
-VER=1.0.0-alpha.15
+VER=1.0.0-alpha.16
 RPM_VER=1.0.0
 RPM_REL=0.alpha.6.1
 for pkg in npsd nps-runner nps-ingress nps-registry; do
@@ -125,7 +125,7 @@ done
 ### Windows（x64，MSI）
 
 ```powershell
-$ver = "1.0.0-alpha.15"
+$ver = "1.0.0-alpha.16"
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
     Invoke-WebRequest -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" -OutFile $file
