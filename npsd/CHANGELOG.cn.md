@@ -6,6 +6,13 @@
 
 ---
 
+## [1.0.0-alpha.17] —— 未发布
+
+### 变更
+
+- 对齐 package metadata、运行时版本 banner 与 publish overlay SDK 依赖，准备服务端能力对齐版本的 alpha.17 daemon 候选。
+- 升级 `Microsoft.Data.Sqlite` 并固定 `SQLitePCLRaw.bundle_e_sqlite3` 2.1.12，移除存在漏洞的 SQLite runtime bundle。
+
 ## [1.0.0-alpha.16] —— 2026-07-23
 
 ### 变更

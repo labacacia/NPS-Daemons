@@ -46,7 +46,7 @@ app.MapGet("/health", () => Results.Json(new
 {
     status         = "ok",
     daemon         = "nps-ingress",
-    version        = "1.0.0-alpha.16",
+    version        = "1.0.0-alpha.17",
     layer          = 2,
     role           = "Internet ingress (L2: NCP-over-TLS terminator)",
     phase          = 2,
@@ -65,5 +65,5 @@ app.MapGet("/health", () => Results.Json(new
     },
 }));
 
-app.Logger.LogInformation("nps-ingress v1.0.0-alpha.16 starting (L2 NCP-over-TLS terminator per NPS-RFC-0006 §6 — enable via NPSINGRESS_CERT_PATH; see docs/daemons/architecture.md)");
+app.Logger.LogInformation("nps-ingress v1.0.0-alpha.17 starting (L2 NCP-over-TLS terminator per NPS-RFC-0006 §6 — enable via NPSINGRESS_CERT_PATH; see docs/daemons/architecture.md)");
 app.Run();

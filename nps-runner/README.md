@@ -24,11 +24,11 @@ dotnet run --project tools/daemons/nps-runner/NpsRunner.csproj
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-runner/Dockerfile -t labacacia/nps-runner:1.0.0-alpha.16 .
+docker build -f tools/daemons/nps-runner/Dockerfile -t labacacia/nps-runner:1.0.0-alpha.17 .
 docker run --rm \
   -e NPSD_URL=http://127.0.0.1:17433 \
   -e NPS_RUNNER_LOG_DIR=/var/log/nps-runner \
-  labacacia/nps-runner:1.0.0-alpha.16
+  labacacia/nps-runner:1.0.0-alpha.17
 ```
 
 ## Configuration

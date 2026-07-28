@@ -8,6 +8,13 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [1.0.0-alpha.17] — Unreleased
+
+### Changed
+
+- Align all four bundled daemon images, package metadata, and operational examples with the alpha.17 server-surface parity candidate.
+- Preserve standalone test access in the runner and ingress publish overlays, and remove the vulnerable bundled SQLite runtime from `npsd` and `nps-registry`.
+
 ## [1.0.0-alpha.16] — 2026-07-23
 
 ### Changed

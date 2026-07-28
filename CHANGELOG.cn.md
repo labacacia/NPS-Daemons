@@ -8,6 +8,13 @@
 
 ---
 
+## [1.0.0-alpha.17] —— 未发布
+
+### 变更
+
+- 将四个 bundle daemon 镜像、package metadata 与运维示例对齐到 alpha.17 服务端能力候选版。
+- 在 runner/ingress publish overlay 中保留独立测试访问权限，并从 `npsd` 和 `nps-registry` 中移除存在漏洞的 SQLite runtime bundle。
+
 ## [1.0.0-alpha.16] —— 2026-07-23
 
 ### 变更
