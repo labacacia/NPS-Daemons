@@ -10,7 +10,7 @@ English | [中文版](./README.cn.md)
 > [`docs/daemons/architecture.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
-## Status — v1.0.0-alpha.16 package, alpha.16 release boundary
+## Status — v1.0.0-alpha.18 package, alpha.16 release boundary
 
 **Published OSS baseline.** Public-facing HTTP listener with a `/health`
 endpoint that documents the planned milestones. The alpha.16 release docs
@@ -43,8 +43,8 @@ curl -s http://localhost:8080/health | jq
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.16 .
-docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.16
+docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.18 .
+docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.18
 ```
 
 ## Configuration (env vars)

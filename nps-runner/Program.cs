@@ -28,7 +28,9 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddSingleton(opts)
     .AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(60) })
+    .AddSingleton<SpawnSpecRemoteClient>()
     .AddSingleton<NpsdClient>()
+    .AddSingleton<SpawnSpecResolver>()
     .AddSingleton<LeaseStore>()
     .AddSingleton<WorkerManager>()
     .AddHostedService<InboxWatcher>();

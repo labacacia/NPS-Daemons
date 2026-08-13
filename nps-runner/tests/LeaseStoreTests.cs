@@ -34,6 +34,21 @@ public sealed class LeaseStoreTests
     }
 
     [Fact]
+    public void Expired_lease_cannot_be_renewed_by_the_former_owner()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var store = new LeaseStore(() => now);
+        store.TryClaim(Task, "runner-A", 10, Dedup);
+
+        now = now.AddSeconds(10);
+
+        Assert.False(store.Renew(Task, "runner-A", 10));
+        Assert.Equal(
+            ClaimResult.Reclaimed,
+            store.TryClaim(Task, "runner-B", 10, Dedup).Result);
+    }
+
+    [Fact]
     public void Expired_lease_is_reclaimable_by_another_runner()
     {
         var now = DateTimeOffset.UtcNow;

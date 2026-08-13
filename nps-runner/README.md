@@ -9,9 +9,11 @@ English | [中文版](./README.cn.md)
 > [`docs/daemons/architecture.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
-## Status — alpha.6
+## Status — alpha.18 candidate
 
-Inbox watcher + worker spawn fully implemented.
+Inbox watching, CR-0007 task leases, portable OCI SpawnSpec execution, and
+legacy direct-subprocess compatibility are implemented. Deployment-specific
+Layer-3 certification remains a separate conformance step.
 
 ## Quick start
 
@@ -24,11 +26,11 @@ dotnet run --project tools/daemons/nps-runner/NpsRunner.csproj
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-runner/Dockerfile -t labacacia/nps-runner:1.0.0-alpha.16 .
+docker build -f tools/daemons/nps-runner/Dockerfile -t labacacia/nps-runner:1.0.0-alpha.18 .
 docker run --rm \
   -e NPSD_URL=http://127.0.0.1:17433 \
   -e NPS_RUNNER_LOG_DIR=/var/log/nps-runner \
-  labacacia/nps-runner:1.0.0-alpha.16
+  labacacia/nps-runner:1.0.0-alpha.18
 ```
 
 ## Configuration
@@ -42,6 +44,8 @@ All configuration is via environment variables.
 | `NPS_RUNNER_POLL_INTERVAL_MS` | `1000` | Inbox poll interval (also sets the long-poll `wait` window) |
 | `NPS_RUNNER_MAX_CONCURRENT_WORKERS` | `8` | Cap on simultaneously running worker processes |
 | `NPS_RUNNER_LOG_DIR` | `/tmp/nps-runner-logs` | Directory for per-worker `{task_id}.log` files |
+| `NPS_RUNNER_OCI_RUNTIME` | `docker` | OCI-compatible CLI used for portable SpawnSpecs |
+| `NPS_REGISTRY_URL` | `http://127.0.0.1:17436` | NDP registry used to resolve `nwp://` SpawnSpec references |
 
 ## How it works
 
@@ -62,18 +66,21 @@ Content-Type: application/json
 X-Nps-Inbox-Ttl-Seconds: 3600
 ```
 
-Body (spawn spec, all fields except `command` are optional):
+Portable OCI body:
 
 ```json
 {
   "task_id": "abc123",
   "reply_to": "<nid-to-notify-on-completion>",
-  "command": "claude",
-  "args": ["remote-control", "--name", "worker-abc", "--port", "1380", "--permission-mode", "bypassPermissions"],
-  "work_dir": "/home/wind/project",
+  "image": "ghcr.io/example/worker@sha256:0123456789abcdef",
+  "command": ["worker", "--task", "abc123"],
   "env": {
-    "ANTHROPIC_API_KEY": "...",
-    "CLAUDE_CODE_SANDBOXED": "1"
+    "NPS_TASK_ID": "abc123"
+  },
+  "resource_limits": {
+    "cpu": "500m",
+    "memory": "512Mi",
+    "cgn_budget": 10000
   },
   "idle_timeout_seconds": 600,
   "max_runtime_seconds": 3600
@@ -84,20 +91,44 @@ Body (spawn spec, all fields except `command` are optional):
 |---|---|---|---|
 | `task_id` | string | no | Caller-supplied ID; auto-generated (UUID) if absent |
 | `reply_to` | string | no | NID that receives a completion notification on worker exit |
-| `command` | string | **yes** | Executable name or absolute path |
-| `args` | string[] | no | Positional arguments |
-| `work_dir` | string | no | Working directory; defaults to nps-runner's CWD |
-| `env` | object | no | Extra env vars merged on top of the inherited environment |
+| `image` | string | **yes** | OCI image reference; a digest-pinned reference is recommended |
+| `command` | string[] | no | OCI entrypoint/argument override appended after the image |
+| `env` | object | no | Environment variables passed to the container |
+| `resource_limits` | object | no | Optional `cpu`, `memory`, and `cgn_budget` limits |
 | `idle_timeout_seconds` | int | no | Kill worker after N seconds of no stdout/stderr output |
 | `max_runtime_seconds` | int | no | Hard wall-clock limit; default ceiling is 4 h |
 
+The inbox body may instead contain a `spawn_spec_ref`. Supported references are
+an inline base64url document (`spawnspec:<payload>`), an HTTPS URL, or an
+`nwp://` URL resolved through `NPS_REGISTRY_URL`. Resolved documents are limited
+to 64 KiB and are validated with the same fail-closed parser. Remote retrieval
+requires HTTPS, rejects user-info and non-public DNS answers, connects only to
+a validated address while preserving TLS hostname verification, and rechecks
+every redirect with a five-hop limit.
+
+The pre-alpha.17 direct-subprocess body remains available for compatibility:
+
+```json
+{
+  "task_id": "abc123",
+  "command": "claude",
+  "args": ["remote-control", "--name", "worker-abc"],
+  "work_dir": "/home/wind/project",
+  "env": {"CLAUDE_CODE_SANDBOXED": "1"},
+  "max_runtime_seconds": 3600
+}
+```
+
+In this legacy shape, `command` is a required string, `args` is a string array,
+and `work_dir` defaults to the runner's current working directory.
+
 ### 3. Worker lifecycle
 
-1. Message arrives → deserialize spawn spec → check concurrency cap.
+1. Message arrives → resolve and validate the spawn spec → check concurrency cap.
 2. If at cap: message stays unacked and reappears next poll cycle.
-3. Otherwise: spawn subprocess with the given command / args / env / work_dir.
+3. Otherwise: claim the task lease and start the OCI container or legacy subprocess.
 4. stdout + stderr are captured to `NPS_RUNNER_LOG_DIR/{task_id}.log`.
-5. Monitor loop (5 s tick) checks idle timeout and max-runtime deadline.
+5. Monitor loop (5 s tick) renews the lease and checks idle and max-runtime deadlines.
 6. On exit (any cause): ack the inbox message; if `reply_to` is set, POST a
    completion notification (JSON, `Content-Type: application/json`) to that NID.
 
@@ -126,6 +157,15 @@ failure isolation, and trust boundary all differ significantly between the
 protocol layer and the worker scheduler — a worker crash must not take the NCP
 layer down, and the scheduler runs user-supplied commands that the protocol layer
 must not have a permission surface for.
+
+## Verification
+
+The standalone daemon bundle includes the shared NOP fixtures under
+`spec/conformance/nop`. Run:
+
+```bash
+dotnet test nps-runner/tests/NpsRunner.Tests.csproj -c Release
+```
 
 ## License
 

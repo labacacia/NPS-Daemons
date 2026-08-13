@@ -3,7 +3,6 @@
 
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -17,16 +16,12 @@ namespace NPS.Daemon.Runner;
 /// </summary>
 internal sealed class InboxWatcher(
     RunnerOptions opts,
-    NpsdClient    client,
+    NpsdClient client,
+    SpawnSpecResolver resolver,
     WorkerManager workers,
-    LeaseStore    leases,
+    LeaseStore leases,
     ILogger<InboxWatcher> log) : BackgroundService
 {
-    private static readonly JsonSerializerOptions s_json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-    };
-
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         var runnerNid = await RegisterWithRetryAsync(ct);
@@ -59,7 +54,16 @@ internal sealed class InboxWatcher(
                     try
                     {
                         var json = Encoding.UTF8.GetString(Convert.FromBase64String(msg.PayloadB64));
-                        spec = JsonSerializer.Deserialize<SpawnSpec>(json, s_json);
+                        var resolution = await resolver.ResolveEnvelopeAsync(json, ct);
+                        if (!resolution.Success)
+                        {
+                            log.LogWarning(
+                                "Inbox message {MsgId}: invalid spawn spec ({ErrorCode}) — acking and skipping",
+                                msg.MessageId, resolution.ErrorCode);
+                            await AckSafeAsync(runnerNid, msg.MessageId, ct);
+                            continue;
+                        }
+                        spec = resolution.Spec;
                     }
                     catch (Exception ex)
                     {
@@ -70,10 +74,10 @@ internal sealed class InboxWatcher(
                         continue;
                     }
 
-                    if (spec is null || string.IsNullOrWhiteSpace(spec.Command))
+                    if (spec is null)
                     {
                         log.LogWarning(
-                            "Inbox message {MsgId}: null or missing `command` — acking and skipping",
+                            "Inbox message {MsgId}: null spawn spec — acking and skipping",
                             msg.MessageId);
                         await AckSafeAsync(runnerNid, msg.MessageId, ct);
                         continue;
@@ -149,7 +153,7 @@ internal sealed class InboxWatcher(
 
     private async Task AckSafeAsync(string nid, string messageId, CancellationToken ct)
     {
-        try   { await client.AckAsync(nid, messageId, ct); }
+        try { await client.AckAsync(nid, messageId, ct); }
         catch (Exception ex) { log.LogWarning(ex, "Ack failed for message {MsgId}", messageId); }
     }
 
@@ -160,7 +164,9 @@ internal sealed class InboxWatcher(
     /// </summary>
     private static string DagHashOf(SpawnSpec spec)
     {
-        var canonical = spec.Command + "\n" + string.Join(" ", spec.Args);
+        var canonical = spec.IsPortableOci
+            ? spec.Image + "\n" + string.Join("\0", spec.ContainerCommand)
+            : spec.Command + "\n" + string.Join("\0", spec.Args);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)))[..16]
             .ToLowerInvariant();
     }

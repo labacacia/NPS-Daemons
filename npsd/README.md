@@ -47,10 +47,10 @@ curl -s http://127.0.0.1:17433/.nwm   | jq
 ### Docker
 
 ```bash
-docker build -f tools/daemons/npsd/Dockerfile -t labacacia/npsd:1.0.0-alpha.16 .
+docker build -f tools/daemons/npsd/Dockerfile -t labacacia/npsd:1.0.0-alpha.18 .
 docker run --rm -p 17433:17433 \
   -v npsd-data:/data \
-  labacacia/npsd:1.0.0-alpha.16
+  labacacia/npsd:1.0.0-alpha.18
 ```
 
 ## API

@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.0-alpha.18] — Unreleased
+
+### Changed
+
+- Align package metadata, runtime banners, publish-overlay SDK references, and the synchronized daemon train with the alpha.18 protocol/SDK candidate.
+
+## [1.0.0-alpha.17] — 2026-08-02
+
+### Changed
+
+- Prepare the alpha.17 daemon candidate by aligning package metadata, runtime banners, and publish-overlay SDK dependencies with the server-surface parity release.
+- Complete the CR-0007 runtime gate with fail-closed portable OCI SpawnSpec
+  validation, inline/HTTPS/NWP reference resolution, configurable OCI runtime
+  execution, deterministic timeout precedence, and legacy subprocess
+  compatibility.
+- Add daemon-owned NOP 0.9 conformance coverage for leases, SpawnSpec parsing,
+  worker lifecycle, and deduplication semantics.
+- Harden remote SpawnSpec retrieval against SSRF and DNS rebinding: reject
+  non-public DNS answers, connect only to a validated address while preserving
+  TLS hostname verification, revalidate every redirect, and bound redirects,
+  response size, and request time.
+- Stop terminal reporting and inbox acknowledgement when a worker loses its
+  lease, leaving completion ownership with the reclaiming runner.
+
 ## [1.0.0-alpha.16] — 2026-07-23
 
 ### Changed

@@ -6,6 +6,18 @@
 
 ---
 
+## [1.0.0-alpha.18] —— 未发布
+
+### 变更
+
+- 将包元数据、runtime banner、publish-overlay SDK 引用与同步 daemon 列车对齐到 alpha.18 协议/SDK 候选版。
+
+## [1.0.0-alpha.17] —— 2026-08-02
+
+### 变更
+
+- 对齐 package metadata、运行时版本 banner 与 publish overlay SDK 依赖，准备服务端能力对齐版本的 alpha.17 daemon 候选。
+
 ## [1.0.0-alpha.16] —— 2026-07-23
 
 ### 变更

@@ -6,6 +6,28 @@
 
 ---
 
+## [1.0.0-alpha.18] —— 未发布
+
+### 变更
+
+- 将包元数据、runtime banner、publish-overlay SDK 引用与同步 daemon 列车对齐到 alpha.18 协议/SDK 候选版。
+
+## [1.0.0-alpha.17] —— 2026-08-02
+
+### 变更
+
+- 对齐 package metadata、运行时版本 banner 与 publish overlay SDK 依赖，准备服务端能力对齐版本的 alpha.17 daemon 候选。
+- 完成 CR-0007 runtime gate：加入 fail-closed portable OCI SpawnSpec 校验、
+  inline / HTTPS / NWP 引用解析、可配置 OCI runtime 执行、确定性的超时优先级，
+  并保留旧版直接子进程兼容路径。
+- 加入 daemon 自有的 NOP 0.9 一致性覆盖，验证租约、SpawnSpec 解析、
+  worker 生命周期与去重语义。
+- 加固远程 SpawnSpec 拉取的 SSRF 与 DNS rebinding 防护：拒绝非公网 DNS
+  结果，仅连接已校验地址并保留 TLS 主机名校验，逐跳重验重定向，并限制
+  重定向次数、响应大小与请求时间。
+- Worker 丢失租约后不再写入终态或 ack inbox，把完成权留给已回收租约的
+  Runner。
+
 ## [1.0.0-alpha.16] —— 2026-07-23
 
 ### 变更

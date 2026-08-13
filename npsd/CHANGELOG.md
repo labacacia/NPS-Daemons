@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.0-alpha.18] — Unreleased
+
+### Changed
+
+- Align package metadata, runtime banners, publish-overlay SDK references, and the synchronized daemon train with the alpha.18 protocol/SDK candidate.
+
+## [1.0.0-alpha.17] — 2026-08-02
+
+### Changed
+
+- Prepare the alpha.17 daemon candidate by aligning package metadata, runtime banners, and publish-overlay SDK dependencies with the server-surface parity release.
+- Upgrade `Microsoft.Data.Sqlite` and pin `SQLitePCLRaw.bundle_e_sqlite3` 2.1.12 to remove the vulnerable bundled SQLite runtime.
+
 ## [1.0.0-alpha.16] — 2026-07-23
 
 ### Changed

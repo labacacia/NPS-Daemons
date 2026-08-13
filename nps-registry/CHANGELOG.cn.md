@@ -6,6 +6,43 @@
 
 ---
 
+## [1.0.0-alpha.18] —— 未发布
+
+### 变更
+
+- 将包元数据、runtime banner、publish-overlay SDK 引用与同步 daemon 列车对齐到 alpha.18 协议/SDK 候选版。
+
+## [1.0.0-alpha.17] —— 2026-08-02
+
+### 新增
+
+- **NPS-CR-0009 多 Anchor 高可用（daemon 侧）。** 接收并持久化
+  `AnnounceFrame.cluster_epoch`（uint64，缺省视为 `1`）；SQLite 存储新增
+  `announcements.cluster_anchor` / `announcements.cluster_epoch` 两列
+  （对 CR 之前的旧库做原地迁移，存量行默认 epoch `1`），并新增
+  `cluster_ownership` 表保存按 cluster 单调的
+  `(cluster_anchor, cluster_epoch, active_nid)` 三元组。
+- `GET /v1/cluster/resolve?cluster_anchor=<nid>` —— NDP §9 最高 epoch 解析。
+  两个存活 Anchor 并列最高 epoch 时返回 `NDP-CLUSTER-SPLIT`
+  （`NPS-CLIENT-CONFLICT`，HTTP 409），而不是任意挑一个。
+- `GET /v1/federation/clusters` 与 `POST /v1/federation/cluster` —— 在
+  federated registry 之间传播 / 接收 cluster 三元组。peer 给出更高 epoch 时采纳，
+  持平或更低时绝不回退。要求 `public-federated` profile（NDP §7.6）。
+- federation 相关端点按 NDP §9 处理 `ndp-forwarded-by`：自身 NID 成环 →
+  `NDP-FEDERATION-LOOP` / 409；超过 3 跳 → 静默丢弃。
+- 新增环境变量 `NPSREGISTRY_NID` 与 `NPSREGISTRY_PROFILE`。
+
+### 变更
+
+- 对齐 package metadata、运行时版本 banner 与 publish overlay SDK 依赖，准备服务端能力对齐版本的 alpha.17 daemon 候选。
+- 升级 `Microsoft.Data.Sqlite` 并固定 `SQLitePCLRaw.bundle_e_sqlite3` 2.1.12，移除存在漏洞的 SQLite runtime bundle。
+- `Program.cs` 拆分为 `RegistryHost`（路由 / 服务）+ `RegistryOptions`
+  （环境变量绑定），使 daemon 可在 `TestServer` 下托管。
+- `/health` 增加 `profile`、`nid` 与已知 `clusters` 数量；`/v1/graph` 的节点
+  带上 `cluster_anchor`。
+- 向后兼容：从不发送 `cluster_epoch` 的单 Anchor cluster 保持 epoch `1`，
+  解析行为与此前完全一致。
+
 ## [1.0.0-alpha.16] —— 2026-07-23
 
 ### 变更

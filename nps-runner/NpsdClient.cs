@@ -16,7 +16,7 @@ internal sealed class NpsdClient(HttpClient http, RunnerOptions opts)
 {
     private static readonly JsonSerializerOptions s_json = new()
     {
-        PropertyNamingPolicy   = JsonNamingPolicy.SnakeCaseLower,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
@@ -76,9 +76,9 @@ internal sealed class NpsdClient(HttpClient http, RunnerOptions opts)
         foreach (var m in arr.EnumerateArray())
         {
             result[i++] = new InboxPollMessage(
-                MessageId:   m.GetProperty("message_id").GetString()!,
+                MessageId: m.GetProperty("message_id").GetString()!,
                 ContentType: m.GetProperty("content_type").GetString() ?? "application/octet-stream",
-                PayloadB64:  m.GetProperty("payload_b64").GetString()!);
+                PayloadB64: m.GetProperty("payload_b64").GetString()!);
         }
         return result;
     }
@@ -96,9 +96,9 @@ internal sealed class NpsdClient(HttpClient http, RunnerOptions opts)
     /// </summary>
     public async Task NotifyAsync(string replyToNid, CompletionNotification note, CancellationToken ct)
     {
-        var json    = JsonSerializer.Serialize(note, s_json);
+        var json = JsonSerializer.Serialize(note, s_json);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var url     = $"{Base}/v1/inbox/{Uri.EscapeDataString(replyToNid)}";
+        var url = $"{Base}/v1/inbox/{Uri.EscapeDataString(replyToNid)}";
         using var _ = await http.PostAsync(url, content, ct);
     }
 }

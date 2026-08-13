@@ -8,7 +8,7 @@
 > DDoS 防护。完整六-daemon 拓扑见
 > [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
 
-## 状态 —— v1.0.0-alpha.16 包，alpha.16 release 边界
+## 状态 —— v1.0.0-alpha.18 包，alpha.16 release 边界
 
 **已发布 OSS baseline。** 公网 HTTP 监听 + `/health` 端点（端点本身记录后续里程碑）。
 alpha.16 release 文档在 SDK/spec 层面对齐 native NCP TLS/mTLS 合约；daemon
@@ -36,8 +36,8 @@ curl -s http://localhost:8080/health | jq
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.16 .
-docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.16
+docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.18 .
+docker run --rm -p 8080:8080 labacacia/nps-ingress:1.0.0-alpha.18
 ```
 
 ## 配置（环境变量）

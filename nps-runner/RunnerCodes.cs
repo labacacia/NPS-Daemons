@@ -9,7 +9,7 @@ namespace NPS.Daemon.Runner;
 internal static class RunnerCodes
 {
     public const string RuntimeIdleTimeout = "NOP-RUNTIME-IDLE-TIMEOUT";
-    public const string RuntimeMaxRuntime  = "NOP-RUNTIME-MAX-RUNTIME";
+    public const string RuntimeMaxRuntime = "NOP-RUNTIME-MAX-RUNTIME";
 
     /// <summary>
     /// Maps a <c>WorkerProcess</c> kill reason to its NPS-CR-0007 §6 error code, or null for a
@@ -18,8 +18,8 @@ internal static class RunnerCodes
     public static string? MapKilledReason(string? killedReason) => killedReason switch
     {
         "idle_timeout" => RuntimeIdleTimeout,
-        "max_runtime"  => RuntimeMaxRuntime,
-        _              => null,
+        "max_runtime" => RuntimeMaxRuntime,
+        _ => null,
     };
 
     /// <summary>

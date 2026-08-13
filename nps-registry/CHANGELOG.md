@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.0-alpha.18] — Unreleased
+
+### Changed
+
+- Align package metadata, runtime banners, publish-overlay SDK references, and the synchronized daemon train with the alpha.18 protocol/SDK candidate.
+
+## [1.0.0-alpha.17] — 2026-08-02
+
+### Added
+
+- **NPS-CR-0009 multi-Anchor HA (daemon side).** `AnnounceFrame.cluster_epoch`
+  (uint64, absent ⇒ `1`) is ingested and persisted; the SQLite store gains
+  `announcements.cluster_anchor` / `announcements.cluster_epoch` (in-place
+  migration for pre-CR stores — existing rows default to epoch `1`) plus a
+  `cluster_ownership` table holding the monotonic
+  `(cluster_anchor, cluster_epoch, active_nid)` tuple.
+- `GET /v1/cluster/resolve?cluster_anchor=<nid>` — NDP §9 highest-epoch
+  resolution. Equal top epoch across two live Anchors → `NDP-CLUSTER-SPLIT`
+  (`NPS-CLIENT-CONFLICT`, HTTP 409) instead of an arbitrary pick.
+- `GET /v1/federation/clusters` and `POST /v1/federation/cluster` — propagate
+  and ingest the cluster tuple between federated registries. A higher epoch from
+  a peer is preferred; an equal or lower one never downgrades the cluster.
+  Requires the `public-federated` profile (NDP §7.6).
+- `ndp-forwarded-by` handling on the federation-facing endpoints: own-NID loop →
+  `NDP-FEDERATION-LOOP` / 409; more than 3 hops → silent drop.
+- `NPSREGISTRY_NID` and `NPSREGISTRY_PROFILE` environment variables.
+
+### Changed
+
+- Prepare the alpha.17 daemon candidate by aligning package metadata, runtime banners, and publish-overlay SDK dependencies with the server-surface parity release.
+- Upgrade `Microsoft.Data.Sqlite` and pin `SQLitePCLRaw.bundle_e_sqlite3` 2.1.12 to remove the vulnerable bundled SQLite runtime.
+- `Program.cs` split into `RegistryHost` (routes/services) + `RegistryOptions`
+  (environment binding) so the daemon can be hosted under `TestServer`.
+- `/health` now reports `profile`, `nid`, and the known `clusters` count;
+  `/v1/graph` nodes carry `cluster_anchor`.
+- Backward compatible: single-Anchor clusters that never send `cluster_epoch`
+  stay at epoch `1` and resolve exactly as before.
+
 ## [1.0.0-alpha.16] — 2026-07-23
 
 ### Changed

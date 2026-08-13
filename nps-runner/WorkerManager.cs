@@ -38,11 +38,11 @@ internal sealed class WorkerManager(RunnerOptions opts, NpsdClient client, Lease
         // Everything below runs inside the try so the slot is released even if worker construction
         // or the renewal-loop setup throws synchronously (otherwise the slot — and the discarded
         // Task's exception — would leak, permanently shrinking capacity).
-        int?    exitCode     = null;
+        int? exitCode = null;
         string? killedReason = null;
-        bool    leaseLost    = false;
-        var     startedAt    = DateTimeOffset.UtcNow;
-        var     logPath      = Path.Combine(opts.LogDir, $"{spec.TaskId}.log");
+        bool abandonCompletion = false;
+        var startedAt = DateTimeOffset.UtcNow;
+        var logPath = Path.Combine(opts.LogDir, $"{spec.TaskId}.log");
 
         // NPS-CR-0007 §4.2: renew the task lease while the worker runs so a long-running task is
         // not reclaimed by another runner mid-execution. If a renewal finds the lease gone (the
@@ -55,16 +55,27 @@ internal sealed class WorkerManager(RunnerOptions opts, NpsdClient client, Lease
 
         try
         {
-            var worker = new WorkerProcess(spec, logPath, log);
+            var worker = new WorkerProcess(spec, logPath, opts, log);
             try
             {
                 (exitCode, killedReason) = await worker.RunAsync(workerCts.Token);
+                if (string.Equals(killedReason, "shutdown", StringComparison.Ordinal))
+                {
+                    abandonCompletion = true;
+                    if (!ct.IsCancellationRequested)
+                    {
+                        killedReason = "lease-lost";
+                        log.LogWarning(
+                            "Worker {TaskId}: lease lost/reclaimed mid-execution — abandoning to the reclaiming runner.",
+                            spec.TaskId);
+                    }
+                }
             }
             catch (OperationCanceledException) when (workerCts.IsCancellationRequested && !ct.IsCancellationRequested)
             {
                 // The renewal loop lost the lease and cancelled us: another runner has reclaimed the
                 // task. Abandon WITHOUT marking the node terminal so the new owner is free to run it.
-                leaseLost    = true;
+                abandonCompletion = true;
                 killedReason = "lease-lost";
                 log.LogWarning("Worker {TaskId}: lease lost/reclaimed mid-execution — abandoning to the reclaiming runner.", spec.TaskId);
             }
@@ -83,7 +94,7 @@ internal sealed class WorkerManager(RunnerOptions opts, NpsdClient client, Lease
             // On lease loss, do NOT mark the node terminal, ack, or notify: the lease (and the
             // inbox message) belong to the reclaiming runner now. Release is a no-op (we no longer
             // own it). Otherwise complete normally per NPS-CR-0007 §4.3.
-            if (!leaseLost)
+            if (!abandonCompletion)
             {
                 // NPS-CR-0007 §4.3: record the node terminal (dedup) and release the lease so the
                 // task is not re-executed on reclaim and the lease frees immediately.
@@ -91,7 +102,7 @@ internal sealed class WorkerManager(RunnerOptions opts, NpsdClient client, Lease
                 leases.Release(spec.TaskId, runnerNid);
 
                 // Ack the inbox message now that the worker has finished.
-                try   { await client.AckAsync(runnerNid, messageId, CancellationToken.None); }
+                try { await client.AckAsync(runnerNid, messageId, CancellationToken.None); }
                 catch (Exception ex) { log.LogWarning(ex, "Worker {TaskId}: ack failed (message_id={MsgId})", spec.TaskId, messageId); }
 
                 // Best-effort completion notification.
@@ -99,16 +110,16 @@ internal sealed class WorkerManager(RunnerOptions opts, NpsdClient client, Lease
                 {
                     var note = new CompletionNotification
                     {
-                        TaskId       = spec.TaskId,
-                        ExitCode     = exitCode,
+                        TaskId = spec.TaskId,
+                        ExitCode = exitCode,
                         KilledReason = killedReason,
-                        ErrorCode    = RunnerCodes.MapKilledReason(killedReason),
-                        NodeState    = RunnerCodes.NodeState(exitCode, killedReason),
-                        LogPath      = logPath,
-                        StartedAt    = startedAt.ToString("O"),
-                        FinishedAt   = DateTimeOffset.UtcNow.ToString("O"),
+                        ErrorCode = RunnerCodes.MapKilledReason(killedReason),
+                        NodeState = RunnerCodes.NodeState(exitCode, killedReason),
+                        LogPath = logPath,
+                        StartedAt = startedAt.ToString("O"),
+                        FinishedAt = DateTimeOffset.UtcNow.ToString("O"),
                     };
-                    try   { await client.NotifyAsync(spec.ReplyTo, note, CancellationToken.None); }
+                    try { await client.NotifyAsync(spec.ReplyTo, note, CancellationToken.None); }
                     catch (Exception ex) { log.LogWarning(ex, "Worker {TaskId}: completion notify failed (reply_to={ReplyTo})", spec.TaskId, spec.ReplyTo); }
                 }
             }
