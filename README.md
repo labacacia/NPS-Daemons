@@ -36,8 +36,8 @@ The **trust-anchor / cloud** layer of NPS lives in two private repos
 under the `innolotus` GitHub organisation, available with NPS Cloud
 when it ships (2027 Q1+):
 
-- `innolotus/nps-cloud-ca` — cross-organisation NID Certificate Authority + CRL/OCSP.
-- `innolotus/nps-ledger` — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
+- `labacacia/NPS-Cloud-CA` — cross-organisation NID Certificate Authority + CRL/OCSP.
+- `labacacia/NPS-Ledger` — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
 
 For self-host CA needs **today**, use [`labacacia/nip-ca-server`](https://github.com/labacacia/nip-ca-server)
 — the OSS single-organisation CA — instead.

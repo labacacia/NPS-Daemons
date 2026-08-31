@@ -33,8 +33,8 @@ README —— 共享发布节奏、共享基础镜像，但独立构建独立发
 NPS 三层中的**信任锚 / 云**层在 GitHub `innolotus` 组织下两个私有仓里，
 跟 NPS Cloud 一起发（2027 Q1+）：
 
-- `innolotus/nps-cloud-ca` —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
-- `innolotus/nps-ledger` —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
+- `labacacia/NPS-Cloud-CA` —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
+- `labacacia/NPS-Ledger` —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
   的 Certificate-Transparency 风格 NID 声誉日志。
 
 **今天**就要自托管 CA 的话用 [`labacacia/nip-ca-server`](https://gitee.com/labacacia/nip-ca-server)
