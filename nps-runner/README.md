@@ -6,7 +6,7 @@ English | [中文版](./README.cn.md)
 > spawns worker subprocesses on demand, and manages their full lifecycle
 > (stdout/stderr capture, idle + max-runtime timeouts, concurrency cap,
 > completion notifications).  See
-> [`docs/daemons/architecture.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md)
+> [`docs/daemons/architecture.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
 ## Status — alpha.18 candidate
@@ -152,7 +152,7 @@ When a worker exits and `reply_to` is set, nps-runner deposits:
 
 ## Why a separate daemon (and not part of `npsd`)
 
-See [architecture §1](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md): resource profile,
+See [architecture §1](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md): resource profile,
 failure isolation, and trust boundary all differ significantly between the
 protocol layer and the worker scheduler — a worker crash must not take the NCP
 layer down, and the scheduler runs user-supplied commands that the protocol layer

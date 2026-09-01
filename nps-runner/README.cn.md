@@ -5,7 +5,7 @@
 > 监控本机 [`npsd`](../npsd/) inbox 中的 JSON spawn-spec 消息，按需拉起
 > worker 子进程，并管理其完整生命周期（stdout/stderr 捕获、空闲/最大运行
 > 超时、并发上限、完成通知）。完整六-daemon 拓扑见
-> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
+> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md)。
 
 ## 状态 —— alpha.18 候选
 
@@ -146,7 +146,7 @@ worker 退出且设置了 `reply_to` 时，nps-runner 投递：
 
 ## 为什么独立 daemon（而不是 `npsd` 的一部分）
 
-详见 [架构 §1](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)：协议层与 worker
+详见 [架构 §1](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md)：协议层与 worker
 调度器在资源画像、故障隔离、信任边界三方面差异巨大 —— worker crash 不该
 把 NCP 层带下去；调度器要执行用户提供的命令，协议层不该有这个权限面。
 

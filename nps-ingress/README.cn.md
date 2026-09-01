@@ -6,7 +6,7 @@
 > 本机协议帧；处理 TLS termination、限速、NeuronHub 用户鉴权、CGN 扣款触发、
 > [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.cn.md) 声誉检查、
 > DDoS 防护。完整六-daemon 拓扑见
-> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
+> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md)。
 
 ## 状态 —— v1.0.0-alpha.18 包，alpha.16 release 边界
 

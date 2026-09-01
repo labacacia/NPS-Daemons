@@ -7,7 +7,7 @@ English | [中文版](./README.cn.md)
 > frames; handles TLS termination, rate limiting, NeuronHub-customer
 > authentication, CGN debit triggering, [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
 > reputation checks, and DDoS defense. See
-> [`docs/daemons/architecture.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md)
+> [`docs/daemons/architecture.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
 ## Status — v1.0.0-alpha.18 package, alpha.16 release boundary

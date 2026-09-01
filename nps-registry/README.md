@@ -7,7 +7,7 @@ English | [中文版](./README.cn.md)
 > and aggregates registrations from multiple machines. Per-host
 > [`npsd`](../npsd/) only knows local sessions; cross-machine queries
 > go here. See
-> [`docs/daemons/architecture.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md)
+> [`docs/daemons/architecture.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
 ## Status
@@ -77,7 +77,7 @@ docker run --rm -p 17436:17436 \
 ## Spec references
 
 - [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md) — the discovery protocol whose registry surface this daemon implements.
-- [Daemon architecture §④](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md#-nps-registry--discovery-registry-l2-stage-optionally-hosted) — why the registry is its own daemon rather than part of `npsd`.
+- [Daemon architecture §④](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md#-nps-registry--discovery-registry-l2-stage-optionally-hosted) — why the registry is its own daemon rather than part of `npsd`.
 
 ## License
 

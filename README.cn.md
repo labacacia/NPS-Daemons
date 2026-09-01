@@ -3,14 +3,14 @@
 # NPS Daemons
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](./LICENSE)
-[![GitHub Release](https://img.shields.io/github/v/release/labacacia/nps-daemons?include_prereleases)](https://github.com/labacacia/nps-daemons/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/labacacia/NPS-Daemons?include_prereleases)](https://github.com/labacacia/NPS-Daemons/releases)
 [![Architecture](https://img.shields.io/badge/architecture-3--layer-success)](./docs/architecture.cn.md)
 
 **Neural Protocol Suite（NPS）** 的参考部署二进制 ——
 覆盖 NPS 标准三层部署拓扑中**主机层 + 网络入口层** 4 个 OSS daemon。
 
 > 源仓库：[gitee.com/labacacia/nps-daemons](https://gitee.com/labacacia/nps-daemons) ·
-> GitHub 镜像：[github.com/labacacia/nps-daemons](https://github.com/labacacia/nps-daemons) ·
+> GitHub 镜像：[github.com/labacacia/NPS-Daemons](https://github.com/labacacia/NPS-Daemons) ·
 > 套件：[NPS-Release](https://gitee.com/labacacia/NPS-Release) ·
 > 架构：[docs/architecture.cn.md](./docs/architecture.cn.md)
 
@@ -33,11 +33,11 @@ README —— 共享发布节奏、共享基础镜像，但独立构建独立发
 NPS 三层中的**信任锚 / 云**层在 GitHub `innolotus` 组织下两个私有仓里，
 跟 NPS Cloud 一起发（2027 Q1+）：
 
-- `innolotus/nps-cloud-ca` —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
-- `innolotus/nps-ledger` —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
+- `labacacia/NPS-Cloud-CA` —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
+- `labacacia/NPS-Ledger` —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
   的 Certificate-Transparency 风格 NID 声誉日志。
 
-**今天**就要自托管 CA 的话用 [`labacacia/nip-ca-server`](https://gitee.com/labacacia/nip-ca-server)
+**今天**就要自托管 CA 的话用 [`labacacia/NIP-CA-Server`](https://gitee.com/labacacia/nip-ca-server)
 —— 单组织 OSS CA。
 
 ---
@@ -86,7 +86,7 @@ dotnet run
 
 ## 原生安装包（不需要 Docker）
 
-[GitHub Release](https://github.com/labacacia/nps-daemons/releases) 随 Docker 镜像一同发布自包含原生安装包 ——
+[GitHub Release](https://github.com/labacacia/NPS-Daemons/releases) 随 Docker 镜像一同发布自包含原生安装包 ——
 无需 .NET 运行时，开箱即用。Linux 安装包注册 systemd 服务；Windows MSI 通过
 `NT SERVICE\<daemon>` 虚拟账户注册 Windows 服务。
 
@@ -97,7 +97,7 @@ dotnet run
 ```bash
 VER=1.0.0~alpha.13   # Debian 版本格式（用 ~ 分隔预发布）
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.18/${pkg}_${VER}_amd64.deb"
+    curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v1.0.0-alpha.18/${pkg}_${VER}_amd64.deb"
     sudo dpkg -i "${pkg}_${VER}_amd64.deb"
 done
 ```
@@ -113,7 +113,7 @@ VER=1.0.0-alpha.18
 RPM_VER=1.0.0
 RPM_REL=0.alpha.6.1
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
+    curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v${VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
     sudo rpm -i "${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
 done
 ```
@@ -128,7 +128,7 @@ done
 $ver = "1.0.0-alpha.18"
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
-    Invoke-WebRequest -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" -OutFile $file
+    Invoke-WebRequest -Uri "https://github.com/labacacia/NPS-Daemons/releases/download/v$ver/$file" -OutFile $file
     Start-Process msiexec.exe -ArgumentList "/i $file /quiet /norestart" -Wait
 }
 # 服务自动启动，验证：
@@ -179,8 +179,8 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 - [NPS-Release](https://gitee.com/labacacia/NPS-Release) —— 协议规范。
 - [NPS-Node Profile](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) —— `npsd` 对照构建的合规规范。
 - [NPS-Node-L1 合规](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 21 个 `TC-N1-*` 用例。
-- [NPS-sdk-dotnet](https://gitee.com/labacacia/NPS-sdk-dotnet) —— daemon 依赖的 .NET SDK。
-- [labacacia/nip-ca-server](https://gitee.com/labacacia/nip-ca-server) —— 当下用于真签发的单组织 OSS CA。
+- [NPS-SDK-DotNet](https://gitee.com/labacacia/NPS-SDK-DotNet) —— daemon 依赖的 .NET SDK。
+- [labacacia/NIP-CA-Server](https://gitee.com/labacacia/nip-ca-server) —— 当下用于真签发的单组织 OSS CA。
 
 ## 版本
 

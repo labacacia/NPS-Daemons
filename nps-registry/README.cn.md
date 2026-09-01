@@ -5,7 +5,7 @@
 > 跨机 NDP 发现注册中心的参考实现。中心节点，响应 NDP `Resolve` / `Graph`
 > 查询，汇总多机注册信息。每机 [`npsd`](../npsd/) 只知道本机 session；
 > 跨机查询走这里。完整六-daemon 拓扑见
-> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
+> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md)。
 
 ## 状态
 
@@ -70,7 +70,7 @@ docker run --rm -p 17436:17436 \
 ## 规范引用
 
 - [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.cn.md) —— 本 daemon 实现的注册中心面所属的发现协议。
-- [Daemon 架构 §④](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md#-nps-registry--discovery-注册中心-l2-阶段可选托管) —— 为什么 registry 独立 daemon 而不是 `npsd` 的一部分。
+- [Daemon 架构 §④](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md#-nps-registry--discovery-注册中心-l2-阶段可选托管) —— 为什么 registry 独立 daemon 而不是 `npsd` 的一部分。
 
 ## 许可证
 

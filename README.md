@@ -3,14 +3,14 @@ English | [中文版](./README.cn.md)
 # NPS Daemons
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](./LICENSE)
-[![GitHub Release](https://img.shields.io/github/v/release/labacacia/nps-daemons?include_prereleases)](https://github.com/labacacia/nps-daemons/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/labacacia/NPS-Daemons?include_prereleases)](https://github.com/labacacia/NPS-Daemons/releases)
 [![Architecture](https://img.shields.io/badge/architecture-3--layer-success)](./docs/architecture.md)
 
 Reference deployment binaries for the **Neural Protocol Suite (NPS)** —
 **four open-source daemons** spanning the host-local and network-entry
 layers of the standard NPS deployment topology.
 
-> Source of truth: [github.com/labacacia/nps-daemons](https://github.com/labacacia/nps-daemons) ·
+> Source of truth: [github.com/labacacia/NPS-Daemons](https://github.com/labacacia/NPS-Daemons) ·
 > Mirror: [gitee.com/labacacia/nps-daemons](https://gitee.com/labacacia/nps-daemons) ·
 > Suite: [NPS-Release](https://github.com/labacacia/NPS-Release) ·
 > Architecture: [docs/architecture.md](./docs/architecture.md)
@@ -36,10 +36,10 @@ The **trust-anchor / cloud** layer of NPS lives in two private repos
 under the `innolotus` GitHub organisation, available with NPS Cloud
 when it ships (2027 Q1+):
 
-- `innolotus/nps-cloud-ca` — cross-organisation NID Certificate Authority + CRL/OCSP.
-- `innolotus/nps-ledger` — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
+- `labacacia/NPS-Cloud-CA` — cross-organisation NID Certificate Authority + CRL/OCSP.
+- `labacacia/NPS-Ledger` — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
 
-For self-host CA needs **today**, use [`labacacia/nip-ca-server`](https://github.com/labacacia/nip-ca-server)
+For self-host CA needs **today**, use [`labacacia/NIP-CA-Server`](https://github.com/labacacia/NIP-CA-Server)
 — the OSS single-organisation CA — instead.
 
 ---
@@ -47,7 +47,7 @@ For self-host CA needs **today**, use [`labacacia/nip-ca-server`](https://github
 ## Quick start (all four daemons together)
 
 ```bash
-git clone https://github.com/labacacia/nps-daemons.git
+git clone https://github.com/labacacia/NPS-Daemons.git
 cd nps-daemons
 docker compose up -d
 
@@ -90,7 +90,7 @@ dependency.
 ## Install from package (no Docker)
 
 Self-contained native packages — no .NET runtime required — are published as
-[GitHub Release assets](https://github.com/labacacia/nps-daemons/releases) alongside
+[GitHub Release assets](https://github.com/labacacia/NPS-Daemons/releases) alongside
 the Docker images. Each package installs a systemd service (Linux) or a Windows service
 registered under a virtual `NT SERVICE\<daemon>` account.
 
@@ -101,7 +101,7 @@ Replace `1.0.0-alpha.18` with the current release tag as needed.
 ```bash
 VER=1.0.0-alpha.18
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${VER}/${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
+    curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v${VER}/${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
     sudo dpkg -i "${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
 done
 ```
@@ -110,7 +110,7 @@ Or install only the daemons you need, e.g.:
 
 ```bash
 VER=1.0.0~alpha.13   # Debian version format (~ replaces -)
-curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.18/npsd_${VER}_amd64.deb"
+curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v1.0.0-alpha.18/npsd_${VER}_amd64.deb"
 sudo dpkg -i "npsd_${VER}_amd64.deb"
 sudo systemctl status npsd
 ```
@@ -126,7 +126,7 @@ VER=1.0.0-alpha.18
 RPM_VER=1.0.0
 RPM_REL=0.alpha.6.1
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
+    curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v${VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
     sudo rpm -i "${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
 done
 ```
@@ -144,7 +144,7 @@ Data directory: `/var/lib/nps/npsd/` (owned by system user `npsd`)
 $ver = "1.0.0-alpha.18"
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
-    Invoke-WebRequest -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" -OutFile $file
+    Invoke-WebRequest -Uri "https://github.com/labacacia/NPS-Daemons/releases/download/v$ver/$file" -OutFile $file
     Start-Process msiexec.exe -ArgumentList "/i $file /quiet /norestart" -Wait
 }
 # Services start automatically; verify:
@@ -196,8 +196,8 @@ Short version:
 - [NPS-Release](https://github.com/labacacia/NPS-Release) — protocol specifications.
 - [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification `npsd` is being built to satisfy.
 - [NPS-Node-L1 conformance](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — 21 `TC-N1-*` cases.
-- [NPS-sdk-dotnet](https://github.com/labacacia/NPS-sdk-dotnet) — the .NET SDK these daemons consume.
-- [labacacia/nip-ca-server](https://github.com/labacacia/nip-ca-server) — the single-org OSS CA for actual cert issuance today.
+- [NPS-SDK-DotNet](https://github.com/labacacia/NPS-SDK-DotNet) — the .NET SDK these daemons consume.
+- [labacacia/NIP-CA-Server](https://github.com/labacacia/NIP-CA-Server) — the single-org OSS CA for actual cert issuance today.
 
 ## Versioning
 
