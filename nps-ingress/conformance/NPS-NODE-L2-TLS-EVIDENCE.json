@@ -1,7 +1,10 @@
 {
   "schema_version": 1,
+  "artifact": "NPS-NODE-L2-FAMILY-IMPLEMENTATION-MANIFEST",
+  "implementation": "nps-ingress",
   "profile": "NPS-Node-L2",
-  "profile_version": "0.6",
+  "profile_version": "0.7",
+  "certification_claim": "family_only",
   "claim_scope": [
     "NPS-RFC-0006",
     "TC-N2-Tls"

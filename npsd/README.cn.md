@@ -34,14 +34,14 @@
 - 升级说明：本 slice 之前签发的 sub-NID 在 npsd 中没有可恢复私钥，会归入 caller-managed/legacy 计数；需要自动广播时应一次性重新签发。
 - 明确不宣称 resident/hybrid push：L1 允许拒绝该可选路径，本 profile 只声明 `ephemeral` HTTP pull + 显式 ack。
 - 真实 socket 测试覆盖 HTTP/native 共存、Hello/Caps、Anchor ACK/缓存与 digest 拒绝、版本/编码不兼容 ErrorFrame、loopback 默认值及 RFC-0001 静默关闭时限。
-- [`conformance/NPS-NODE-L1-MANIFEST.json`](./conformance/NPS-NODE-L1-MANIFEST.json) 记录精确 NCP、NDP、NWP 用例证据。其余 NIP/NWP 与进程级用例未收口前，不宣称完整 Node L1 认证。
+- [`conformance/NPS-NODE-L1-MANIFEST.json`](./conformance/NPS-NODE-L1-MANIFEST.json) 穷举全部 20 个 L1 用例，分别记录 verified、partial、unexecuted 或 optional-not-applicable 状态，并给出可重跑证据门禁的命令。任一必选用例未完成时都不宣称完整 Node L1 认证。
 
 ## alpha.11+ 还没做的部分
 
 按 `docs/daemons/architecture.md` 的逐 daemon 阶段表跟踪：
 
 - resident/hybrid push（L1 可选且本 profile 不声明；留给后续 L2+ 设计）。
-- 完整 NPS-Node L1 认证；本次只验证清单中声明的 NCP/NDP/NWP 子集。
+- 完整 NPS-Node L1 认证；穷举 manifest 会继续显式保留所有未完成的必选用例。
 
 ## 快速开始
 
@@ -121,7 +121,7 @@ docker run --rm -p 17433:17433 \
 ## 规范参考
 
 - [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) —— 本 daemon 对照构建的合规规范。
-- [NPS-Node-L1 合规](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 21 个 `TC-N1-*` 用例。
+- [NPS-Node-L1 合规](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
 - [Daemon 架构](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md) —— 六 daemon、三层参考部署。
 - [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.cn.md) —— 线层。
 - [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.cn.md) —— root keypair / IdentFrame 语义。

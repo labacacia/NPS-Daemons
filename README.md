@@ -194,7 +194,7 @@ Short version:
 
 - [NPS-Release](https://github.com/labacacia/NPS-Release) — protocol specifications.
 - [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification `npsd` is being built to satisfy.
-- [NPS-Node-L1 conformance](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — 21 `TC-N1-*` cases.
+- [NPS-Node-L1 conformance](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — 20 `TC-N1-*` cases.
 - [NPS-sdk-dotnet](https://github.com/labacacia/NPS-sdk-dotnet) — the .NET SDK these daemons consume.
 - [labacacia/nip-ca-server](https://github.com/labacacia/nip-ca-server) — the single-org OSS CA for actual cert issuance today.
 

@@ -95,11 +95,20 @@ dotnet run
 ### Ubuntu / Debian（amd64）
 
 ```bash
-VER=1.0.0~alpha.13   # Debian 版本格式（用 ~ 分隔预发布）
+VER=1.0.0-alpha.18
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.18/${pkg}_${VER}_amd64.deb"
-    sudo dpkg -i "${pkg}_${VER}_amd64.deb"
+    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${VER}/${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
+    sudo dpkg -i "${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
 done
+```
+
+也可以只安装需要的 daemon，例如：
+
+```bash
+VER=1.0.0~alpha.13   # Debian 版本格式（用 ~ 替换 -）
+curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.18/npsd_${VER}_amd64.deb"
+sudo dpkg -i "npsd_${VER}_amd64.deb"
+sudo systemctl status npsd
 ```
 
 配置覆盖文件（升级时保留）：`/etc/nps/<daemon>/env`
@@ -178,7 +187,7 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 - [NPS-Release](https://gitee.com/labacacia/NPS-Release) —— 协议规范。
 - [NPS-Node Profile](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) —— `npsd` 对照构建的合规规范。
-- [NPS-Node-L1 合规](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 21 个 `TC-N1-*` 用例。
+- [NPS-Node-L1 合规](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
 - [NPS-sdk-dotnet](https://gitee.com/labacacia/NPS-sdk-dotnet) —— daemon 依赖的 .NET SDK。
 - [labacacia/nip-ca-server](https://gitee.com/labacacia/nip-ca-server) —— 当下用于真签发的单组织 OSS CA。
 

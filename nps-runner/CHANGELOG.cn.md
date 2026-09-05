@@ -19,6 +19,7 @@
   worker，且不写终态、不 ack、不发送完成通知。确定性测试覆盖完整旧属主路径。
 - 新增机器可读 Node L3 implementation manifest：三个严格 case 已验证、五个为
   部分验证，TaskFrame DAG/Saga 部署 case 明确未执行，因此不声明完整 L3 认证。
+- 为该 manifest 增加可运行门禁元数据和精确十项 case 覆盖检查。
 - 公开 resolver 的依赖注入构造器以修复生产启动；同时修复两条 Docker 构建路径，
   改用基础镜像自带的非 root `app` 账户、复制完整独立源码树，并配置持久化状态卷。
 - 修正仍把当前 runner 描述为骨架的陈旧文本，同时把 alpha.3/alpha.4 记录保留为
@@ -61,6 +62,10 @@
 - 承载源事实树中的 NCP Tier-3 BinaryVector、入站 NWP Bridge server 加固、NIP canonical trust/revoke，以及 NDP discovery canonical-form 对齐。
 
 ## [1.0.0-alpha.14] —— 2026-06-26
+
+- 套件版本同步到 1.0.0-alpha.14。
+
+## [1.0.0-alpha.14] —— 2026-06-13
 
 ### 新增
 

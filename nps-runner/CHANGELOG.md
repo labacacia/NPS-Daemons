@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added a machine-readable Node L3 implementation manifest: three strict cases
   are verified, five are partial, and the TaskFrame DAG/Saga deployment cases are
   explicitly unexecuted, so full L3 certification is not claimed.
+- Added runnable gate metadata and exact ten-case coverage checks to that manifest.
 - Fixed production startup by exposing the resolver's dependency-injection
   constructor, and fixed both Docker build paths to use the base image's non-root
   `app` account, copy the complete standalone source tree, and provision the

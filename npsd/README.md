@@ -35,14 +35,14 @@ English | [中文版](./README.cn.md)
 - Upgrade note: sub-NIDs created before this slice have no recoverable private key in npsd and are reported with caller-managed/legacy agents; reissue them once if automatic announcements are required.
 - Resident/hybrid push is deliberately not claimed: L1 permits that path to be declined, and this profile advertises only `ephemeral` HTTP pull with explicit acknowledgement.
 - Real-socket tests cover HTTP/native coexistence, Hello/Caps, Anchor ACK/cache and digest rejection, incompatible-version and unsupported-encoding ErrorFrames, loopback defaults, and the RFC-0001 silent-close deadline.
-- [`conformance/NPS-NODE-L1-MANIFEST.json`](./conformance/NPS-NODE-L1-MANIFEST.json) records the exact NCP, NDP and NWP case evidence. Full Node L1 certification is not claimed while the remaining NIP/NWP and process-level cases are open.
+- [`conformance/NPS-NODE-L1-MANIFEST.json`](./conformance/NPS-NODE-L1-MANIFEST.json) exhaustively records all 20 L1 cases as verified, partial, unexecuted, or optional-not-applicable and includes the commands that rerun its evidence gates. Full Node L1 certification is not claimed while any required case remains incomplete.
 
 ## What is NOT yet implemented (alpha.11+)
 
 Tracked in `docs/daemons/architecture.md` under the per-daemon phasing table:
 
 - Resident/hybrid push delivery (optional at L1 and not advertised by this profile; belongs to a future L2+ design).
-- Full NPS-Node L1 certification; this slice verifies only the declared NCP/NDP/NWP subset.
+- Full NPS-Node L1 certification; the exhaustive manifest keeps every incomplete required case visible.
 
 ## Quick start
 
@@ -122,7 +122,7 @@ All endpoints return JSON unless noted. Errors carry `{error, status, message}` 
 ## Spec references
 
 - [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification this daemon targets.
-- [NPS-Node-L1 conformance suite](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — the 21 `TC-N1-*` cases this daemon is being built to pass.
+- [NPS-Node-L1 conformance suite](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — the 20 `TC-N1-*` cases this daemon is being built to pass.
 - [Daemon architecture](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.md) — the six-daemon, three-layer reference deployment.
 - [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md) — the wire layer.
 - [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md) — root keypair / IdentFrame semantics.
