@@ -18,8 +18,8 @@ namespace NPS.Daemon.Npsd;
 /// settled; that decision lands with NPS-RFC-0002 (X.509 + ACME) in alpha.4.
 ///
 /// The in-memory <see cref="Key"/> handle is shared with anything that needs
-/// to sign on behalf of the host (sub-NID issuance, AnnounceFrame emission
-/// when wired to <c>nps-registry</c> in alpha.4).
+/// to sign on behalf of the host (sub-NID issuance and host-bound protection
+/// of managed agent keys used for publisher-signed AnnounceFrames).
 /// </remarks>
 public sealed class RootIdentity : IDisposable
 {

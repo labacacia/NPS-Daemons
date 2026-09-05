@@ -6,6 +6,35 @@
 
 ---
 
+## [未发布] —— alpha.19 债务收口
+
+### 变更
+
+- 将当前 runtime 声明与源码中已经存在的 native ingress 对齐：TLS 1.3、ALPN
+  `nps/1.0`、NIP mTLS 信任验证、证书/`IdentFrame` 内联 session-NID 绑定、
+  后端握手前缀重放，以及客户端 half-close 后的响应排空。
+- 用机器可读的能力快照替换过时的 `/health` 计划里程碑，区分已实现、存在配置、
+  未认证与不支持边界。
+- 修正双语 daemon README、架构/状态表、包描述和容器端口；继续明确不声明
+  未支持的 capability。
+- 为健康声明事实和双向代理的两条完成路径加入确定性测试。
+- 新增完整 `TC-N2-Tls-01..04` family 的真实 socket 可执行证据，覆盖 TLS 1.3/ALPN
+  协商、强制客户端证书、可信 NIP 证书到会话的绑定，以及对端可见的
+  `NCP-NID-MISMATCH` 拒绝。
+- 修复 TLS 1.3/OpenSSL 未提交客户端证书仍可能完成握手的 fail-open 边界，并在
+  NID 不一致的会话关闭前发送结构化 `ErrorFrame`。
+- 发布角色范围证据 manifest，但不宣称拓扑、Bridge、HA、Registry、admission-control
+  family 或完整 NPS-Node-L2 已认证。
+- 修复正常的交互式 native 握手路径：ingress 先转发后端 Caps，再等待 Caps 之后的
+  IdentFrame，并在转发 Ident 前校验证书 NID。无效 preamble、非 Hello 首帧、超大
+  frame 与慢速不完整握手都会在连接后端前关闭。
+- 为历史路线图中的限速、NeuronHub 鉴权、CGN 扣款、声誉、Anchor 中间件和 DDoS
+  项增加机械校验的当前契约 disposition；这些项目不再被宣传为 RFC-0006 transport
+  capability。
+- 修复两条 Docker 构建路径对当前 .NET 基础镜像和 standalone 源码布局的适配：
+  使用内建非 root `app` 身份、复制全部 runtime 源文件，并以二进制内建
+  `--healthcheck` 探针替换镜像中不存在的 `wget`。
+
 ## [1.0.0-alpha.18] —— 2026-08-15
 
 ### 变更

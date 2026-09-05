@@ -6,6 +6,18 @@
 
 ---
 
+## [未发布] —— alpha.19 技债收口
+
+### 新增
+
+- 新增连接层单端口分流：现有 HTTP 控制 API 与原生 NCP 共用配置的 `17433` 端点，且不会互相消费字节。
+- 新增 npsd local-dev 原生 NCP 会话路径：有界 RFC-0001 preamble/Hello 读取、确定性 Hello/Caps 协商、协商后帧上限、canonical AnchorFrame ACK/缓存、协议 ErrorFrame 后关闭及准入前静默关闭。
+- 新增真实 socket daemon 测试与严格 Node L1 实现清单。NCP 2 项 verified、2 项 partial；明确不宣称完整 L1 认证。
+- 将进程内 inbox 替换为持久 SQLite 状态；未投递 ActionFrame、优先级顺序、绝对 TTL 与 ack 均跨宿主重启保留，并明确拒绝本 L1 profile 的 resident/hybrid push 可选能力。
+- 为 npsd 托管 agent 新增发布者签名的 ephemeral AnnounceFrame 广播，包括持久单调 graph sequence、受限 heartbeat/TTL、优雅下线信号、registry 不可用时的重试隔离，以及可拒绝签名正文篡改的合规测试。
+- 新增有界 sub-NID 续租，以原子方式替换 serial/有效期，并对过早、撤销、过期和并发变更 fail closed。托管 agent 私钥仅以绑定主机 root 的 AES-256-GCM envelope 保留，使广播签名可跨重启连续；BYO key 始终不进入 npsd，也不会自动广播。
+- 修复两条 Docker 构建路径：使用 .NET 基础镜像自带的非 root `app` 身份，把此前漏掉的 observability 项目/源码纳入 monorepo/overlay context，让 standalone materialization 携带 native/conformance 源码，并用 npsd 内建 `--healthcheck` 替换镜像中不存在的 `wget` 探针。
+
 ## [1.0.0-alpha.18] —— 2026-08-15
 
 ### 变更

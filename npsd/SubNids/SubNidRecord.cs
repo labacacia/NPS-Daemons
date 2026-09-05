@@ -55,4 +55,10 @@ public sealed record SubNidRecord
     /// suggested values match NPS-3 §5.3 RevokeFrame reason values.
     /// </summary>
     public string? RevokeReason { get; init; }
+
+    /// <summary>
+    /// Last graph sequence reserved for an emitted AnnounceFrame. Persisted so
+    /// liveness announcements remain monotonic across daemon restarts.
+    /// </summary>
+    public ulong GraphSeq { get; init; }
 }

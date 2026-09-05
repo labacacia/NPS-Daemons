@@ -1,0 +1,87 @@
+{
+  "artifact": "NPS-NODE-L3-IMPLEMENTATION-MANIFEST",
+  "version": 1,
+  "implementation": "nps-runner",
+  "candidate_work": "1.0.0-alpha.19-debt-closure",
+  "suite": "spec/services/conformance/NPS-Node-L3.md@0.2",
+  "certification_claim": "not_claimed",
+  "deployment_scope": "runner processes on one host sharing one persistent SQLite state file",
+  "summary": {
+    "verified": 3,
+    "partial": 5,
+    "not_executed": 2,
+    "all_cases_required_for_certification": true
+  },
+  "cases": {
+    "TC-N3-Claim-01": {
+      "status": "partial",
+      "evidence": [
+        "tests/LeaseStoreTests.cs#Concurrent_claim_across_file_backed_runner_instances_grants_exactly_one",
+        "tests/RunnerClaimPolicyTests.cs"
+      ],
+      "gap": "Exactly-one internal claim and NOP-CLAIM-CONFLICT classification are verified, but the current inbox API does not expose the suite's HTTP 409 claim response."
+    },
+    "TC-N3-Claim-02": {
+      "status": "partial",
+      "evidence": [
+        "tests/LeaseStoreTests.cs#Expired_lease_is_reclaimable_but_stale_owner_cannot_renew_or_complete",
+        "tests/LeaseStoreTests.cs#Terminal_node_dedup_survives_store_reopen_and_reclaim"
+      ],
+      "gap": "Expired reclaim and durable terminal-node lookup are verified, but this runner message contract does not yet resume a multi-node TaskFrame from its first non-terminal node."
+    },
+    "TC-N3-Claim-03": {
+      "status": "verified",
+      "evidence": [
+        "tests/LeaseRenewalLoopTests.cs#Periodic_loop_renews_the_durable_lease_at_half_window",
+        "tests/WorkerManagerLeaseLossTests.cs"
+      ]
+    },
+    "TC-N3-Spawn-01": {
+      "status": "verified",
+      "evidence": [
+        "tests/PortableRuntimeConformanceTests.cs",
+        "tests/SpawnSpecResolverTests.cs"
+      ]
+    },
+    "TC-N3-Spawn-02": {
+      "status": "verified",
+      "evidence": [
+        "tests/SpawnSpecResolverTests.cs"
+      ]
+    },
+    "TC-N3-Spawn-03": {
+      "status": "partial",
+      "evidence": [
+        "tests/PortableRuntimeConformanceTests.cs",
+        "tests/SpawnSpecResolverTests.cs"
+      ],
+      "gap": "Fail-closed resolution and NOP-SPAWN-SPEC-INVALID are verified, but no TaskFrame node store is connected for the required FAILED state transition."
+    },
+    "TC-N3-Life-01": {
+      "status": "partial",
+      "evidence": [
+        "tests/PortableRuntimeConformanceTests.cs",
+        "tests/RunnerCodesTests.cs",
+        "tests/WorkerProcessTests.cs"
+      ],
+      "gap": "Timeout selection, process reaping machinery, error mapping and FAILED notification state are verified, but no orchestrator task store is connected for the required terminal PATCH."
+    },
+    "TC-N3-Life-02": {
+      "status": "partial",
+      "evidence": [
+        "tests/PortableRuntimeConformanceTests.cs",
+        "tests/RunnerCodesTests.cs",
+        "tests/WorkerProcessTests.cs"
+      ],
+      "gap": "Timeout selection, process reaping machinery, error mapping and FAILED notification state are verified, but no orchestrator task store is connected for the required terminal PATCH."
+    },
+    "TC-N3-DAG-01": {
+      "status": "not_executed",
+      "gap": "nps-runner currently consumes individual SpawnSpec inbox messages and is not connected to NopOrchestrator TaskFrame DAG dispatch or its task store."
+    },
+    "TC-N3-Saga-01": {
+      "status": "not_executed",
+      "gap": "Saga compensation exists in NPS.NOP, but no deployment-specific runner-to-orchestrator TaskFrame integration has been executed."
+    }
+  }
+}

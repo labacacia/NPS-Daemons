@@ -8,7 +8,7 @@
     <AssemblyName>nps-ingress</AssemblyName>
     <RootNamespace>NPS.Daemon.Ingress</RootNamespace>
     <Version>1.0.0-alpha.18</Version>
-    <Description>NPS Daemon — Layer 2 Internet ingress (nps-ingress). Public-facing translator from NPS-over-TLS to local frames. Handles TLS termination, rate limit, NeuronHub-customer auth, CGN debit triggering, reputation checks, DDoS defense.</Description>
+    <Description>NPS Daemon — Layer 2 Internet ingress (nps-ingress). RFC-0006 TLS 1.3 terminator with ALPN nps/1.0, NIP mTLS/interactive session-NID binding, bounded handshake admission, executable TC-N2-Tls evidence, and local backend proxy. Broader AaaS/Anchor/product/deployment controls are not claimed.</Description>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 

@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "iut": {
+    "name": "nps-ingress",
+    "role": "NCP-over-TLS transport terminator",
+    "version": "1.0.0-alpha.18"
+  },
+  "current_contract": {
+    "specification": "NPS-RFC-0006 §6",
+    "status": "implemented",
+    "requirements": [
+      "TLS 1.3 with ALPN nps/1.0",
+      "NIP client certificate validation to configured trust anchors",
+      "certificate NID binding to the post-Caps IdentFrame",
+      "NCP-NID-MISMATCH rejection before forwarding a mismatched IdentFrame"
+    ],
+    "evidence": [
+      "TC-N2-Tls-01",
+      "TC-N2-Tls-02",
+      "TC-N2-Tls-03",
+      "TC-N2-Tls-04"
+    ]
+  },
+  "transport_hardening": [
+    {
+      "id": "bounded-handshake-time",
+      "status": "implemented",
+      "evidence": "Slow_incomplete_preamble_is_bounded_by_admission_timeout"
+    },
+    {
+      "id": "bounded-handshake-frame",
+      "status": "implemented",
+      "evidence": "Oversized_hello_closes_without_allocating_or_connecting_backend"
+    },
+    {
+      "id": "pre-admission-framing",
+      "status": "implemented",
+      "evidence": "Invalid_preamble_closes_silently_without_backend_admission; Non_hello_first_frame_closes_silently_without_backend_admission"
+    },
+    {
+      "id": "fail-closed-ident-and-backend",
+      "status": "implemented",
+      "evidence": "Malformed_ident_fails_closed_and_is_not_forwarded; Backend_connection_failure_closes_without_hanging_the_tls_peer"
+    }
+  ],
+  "historical_items": [
+    {
+      "id": "rate-limiting",
+      "status": "not-claimed",
+      "disposition": "No rate-limit algorithm or quota contract is defined by NPS-RFC-0006. Deployments may compose an edge limiter or an authenticated Anchor policy without changing the transport contract."
+    },
+    {
+      "id": "neuronhub-customer-authentication",
+      "status": "product-integration",
+      "disposition": "NeuronHub customer authentication is a managed-product concern, not an open NPS transport requirement. Native NPS identity remains NIP mTLS plus IdentFrame binding."
+    },
+    {
+      "id": "cgn-debit",
+      "status": "not-applicable",
+      "disposition": "AaaS L2-03 applies CGN-Estimate to service responses and L3-08 applies CGN-Billing only to commercial settlement flows. A byte-transparent TLS terminator neither produces service responses nor claims a settlement flow."
+    },
+    {
+      "id": "reputation-policy",
+      "status": "optional-not-enabled",
+      "disposition": "AaaS L2-09 is a SHOULD for deployments claiming the AaaS L2 profile. nps-ingress does not claim that profile or publish an NWM; an Anchor deployment may enforce RFC-0005 behind this transport edge."
+    },
+    {
+      "id": "anchor-middleware",
+      "status": "optional-composition",
+      "disposition": "NPS-CR-0001 defines Anchor as a protocol role, not a mandatory responsibility of the nps-ingress process. This daemon proxies admitted NCP sessions to the configured backend and does not claim Anchor behavior."
+    },
+    {
+      "id": "ddos-policy",
+      "status": "deployment-control",
+      "disposition": "The current NPS protocol defines framing and handshake bounds, which are enforced here. Volumetric protection, request-rate caps and fail2ban integration are deployment controls and are not advertised as daemon capabilities."
+    }
+  ],
+  "claim": "nps-ingress claims only the RFC-0006 transport admission boundary and the listed local framing/time bounds; it does not claim AaaS, Anchor, billing, reputation, customer-authentication, rate-limit, or full DDoS capabilities."
+}

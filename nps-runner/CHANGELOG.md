@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- Package the machine-readable runner conformance manifests into the standalone
+  test output so the same capability contract runs in monorepo and materialized layouts.
+- Replaced the process-local task lease and terminal-dedup map with a persistent
+  SQLite store. Processes sharing the same state file now make atomic claims,
+  preserve terminal nodes across restart, reclaim expired leases, and fence a
+  stale/restarted process with a fresh process-instance identity.
+- Leave claim-conflicted inbox messages unacked, atomically commit terminal state
+  before ack, and cancel a worker on lease loss without terminal write, ack, or
+  completion notification. Deterministic tests cover the full stale-owner path.
+- Added a machine-readable Node L3 implementation manifest: three strict cases
+  are verified, five are partial, and the TaskFrame DAG/Saga deployment cases are
+  explicitly unexecuted, so full L3 certification is not claimed.
+- Fixed production startup by exposing the resolver's dependency-injection
+  constructor, and fixed both Docker build paths to use the base image's non-root
+  `app` account, copy the complete standalone source tree, and provision the
+  persistent state volume.
+- Corrected stale skeleton-era current-status text while preserving historical
+  alpha.3/alpha.4 records as history.
+
 ## [1.0.0-alpha.18] — 2026-08-15
 
 ### Changed
@@ -28,7 +51,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   TLS hostname verification, revalidate every redirect, and bound redirects,
   response size, and request time.
 - Stop terminal reporting and inbox acknowledgement when a worker loses its
-  lease, leaving completion ownership with the reclaiming runner.
+  process-local lease, leaving the message available for a later local claim.
 
 ## [1.0.0-alpha.16] — 2026-07-23
 
@@ -52,15 +75,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **NPS-CR-0007 task-claim lease protocol** (`LeaseStore.cs`). The inbox dispatch now claims an
-  atomic lease per `task_id` before spawning a worker, so two runner replicas never execute the
-  same task: a live lease held by another runner returns `NOP-CLAIM-CONFLICT` (the message is
-  acked and skipped). Leases are clamped to `[10, 600]s`, auto-expire (a crashed runner's lease
-  frees for reclaim), and carry a `dedup_key = sha256(task_id ‖ dag_hash)`; a node that has
-  reported a terminal state is recorded so a reclaiming runner does not re-execute it (§4.3
-  idempotency). Lease is released on worker completion. Unit tests: `tests/LeaseStoreTests.cs`
-  (8 cases). Follow-up: lease renewal for workers running longer than the lease window;
-  distributed lease store for multi-replica deployments (CR-0007 §10 OQ-1).
+- **NPS-CR-0007 task-claim decision logic** (`LeaseStore.cs`). Inbox dispatch
+  claims a process-local lease per `task_id` before spawning; local contention
+  returns `NOP-CLAIM-CONFLICT`. Leases are clamped to `[10, 600]s`, expire within
+  that process, carry `dedup_key = sha256(task_id ‖ dag_hash)`, and release on
+  worker completion. Historical correction: this in-memory implementation did
+  not coordinate replicas or retain leases/terminal dedup across a process crash.
+  Those durable/shared semantics remained follow-up work (CR-0007 §10 OQ-1).
 
 ## [1.0.0-alpha.7] — 2026-05-18
 

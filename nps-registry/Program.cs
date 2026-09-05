@@ -10,6 +10,25 @@
 using NPS.Daemon.Registry;
 
 var opts = RegistryOptions.FromEnvironment();
+
+if (args is ["--healthcheck"])
+{
+    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+    try
+    {
+        using var response = await client.GetAsync($"http://127.0.0.1:{opts.Port}/health");
+        return response.IsSuccessStatusCode ? 0 : 1;
+    }
+    catch (HttpRequestException)
+    {
+        return 1;
+    }
+    catch (TaskCanceledException)
+    {
+        return 1;
+    }
+}
+
 var app  = RegistryHost.Build(args, opts);
 
 app.Logger.LogInformation(
@@ -18,6 +37,7 @@ app.Logger.LogInformation(
     string.IsNullOrEmpty(opts.SqlitePath) ? "in-memory" : opts.SqlitePath, opts.Profile);
 
 app.Run();
+return 0;
 
 // Test bridge: NPS.Tests hosts the daemon through RegistryHost.WireServices / WireRoutes
 // against Microsoft.AspNetCore.TestHost.TestServer.

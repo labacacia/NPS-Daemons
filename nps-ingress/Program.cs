@@ -4,17 +4,37 @@
 // nps-ingress — NPS Daemon, Layer 2 (Internet ingress).
 // See docs/daemons/architecture.md for the role this binary plays.
 //
-// Phase 1 (v1.0-alpha.3): public-facing HTTP listener with /health
-// only. TLS termination, rate limit, NeuronHub auth, CGN debit, and
-// reputation policy lookup all land in alpha.4 onwards.
+// The HTTP listener is the observability surface. The native listener terminates
+// NCP-over-TLS and proxies the verified stream to npsd. Admission controls beyond
+// the RFC-0006 TLS boundary remain explicitly unsupported (see /health).
 //
 // Naming note: this is the *process* called "nps-ingress", distinct from
 // the spec-level role of cluster control plane which is now called
 // **Anchor Node** in NWP (NPS-CR-0001). This process MAY host an
-// Anchor Node middleware via NPS.NWP.Anchor; that wiring lands in
-// alpha.4.
+// Anchor Node middleware via NPS.NWP.Anchor; that wiring is not implemented.
 
 using NPS.Daemon.Ingress;
+
+if (args is ["--healthcheck"])
+{
+    var port = int.TryParse(Environment.GetEnvironmentVariable("NPSINGRESS_PORT"), out var configuredPort)
+        ? configuredPort
+        : 8080;
+    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
+    try
+    {
+        using var response = await client.GetAsync($"http://127.0.0.1:{port}/health");
+        return response.IsSuccessStatusCode ? 0 : 1;
+    }
+    catch (HttpRequestException)
+    {
+        return 1;
+    }
+    catch (TaskCanceledException)
+    {
+        return 1;
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,28 +62,8 @@ builder.WebHost.ConfigureKestrel(options =>
 
 var app = builder.Build();
 
-app.MapGet("/health", () => Results.Json(new
-{
-    status         = "ok",
-    daemon         = "nps-ingress",
-    version        = "1.0.0-alpha.18",
-    layer          = 2,
-    role           = "Internet ingress (L2: NCP-over-TLS terminator)",
-    phase          = 2,
-    spec_reference = "NPS-RFC-0006 §6 (native-mode TLS binding); docs/daemons/architecture.md",
-    done           = new[]
-    {
-        "L2 native-mode TLS terminator: ALPN nps/1.0, mutual TLS with NIP-cert validation + session-NID binding (NCP-NID-MISMATCH), proxy to backend (alpha.13, NPS-RFC-0006 §6)",
-    },
-    todo           = new[]
-    {
-        "inline IdentFrame-NID cross-check on the terminated stream",
-        "TC-N2-* L2 conformance",
-        "rate limiting / CGN debit trigger",
-        "NPS-RFC-0004 reputation policy lookup",
-        "NPS.NWP.Anchor middleware wiring",
-    },
-}));
+app.MapGet("/health", () => Results.Json(IngressHealthSnapshot.Create(ingressOptions)));
 
 app.Logger.LogInformation("nps-ingress v1.0.0-alpha.18 starting (L2 NCP-over-TLS terminator per NPS-RFC-0006 §6 — enable via NPSINGRESS_CERT_PATH; see docs/daemons/architecture.md)");
 app.Run();
+return 0;

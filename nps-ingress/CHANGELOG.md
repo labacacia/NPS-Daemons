@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — alpha.19 debt closure
+
+### Changed
+
+- Reconciled current runtime claims with the native ingress already present in source: TLS 1.3,
+  ALPN `nps/1.0`, NIP mTLS trust validation, inline certificate/`IdentFrame` session-NID binding,
+  backend prefix replay, and response drain after client half-close.
+- Replaced the stale planned-milestones `/health` payload with a machine-readable capability
+  snapshot that distinguishes implemented, configuration-present, uncertified, and unsupported boundaries.
+- Corrected the bilingual daemon README, architecture/status tables, package descriptions, and
+  container ports. Unsupported capabilities remain explicitly unclaimed.
+- Added deterministic tests for health claim truth and both bidirectional-proxy completion paths.
+- Added real-socket executable evidence for the complete `TC-N2-Tls-01..04` family, including
+  TLS 1.3/ALPN negotiation, mandatory client certificates, trusted NIP certificate-to-session
+  binding, and peer-visible `NCP-NID-MISMATCH` rejection.
+- Closed a TLS 1.3 fail-open edge where OpenSSL could finish the handshake without presenting a
+  client certificate, and emit a structured `ErrorFrame` before closing NID-mismatched sessions.
+- Published a role-scoped evidence manifest without claiming the topology, Bridge, HA, Registry,
+  admission-control, or full NPS-Node-L2 families.
+- Fixed the normal interactive native handshake path: ingress now relays backend Caps before
+  waiting for the post-Caps IdentFrame, then validates the certificate NID before forwarding that
+  Ident. Invalid preambles, non-Hello first frames, oversized frames, and slow incomplete
+  handshakes close before backend admission.
+- Added a mechanically tested current-contract disposition for the historical rate-limit,
+  NeuronHub auth, CGN debit, reputation, Anchor middleware, and DDoS roadmap items. These are not
+  advertised as RFC-0006 transport capabilities.
+- Repaired both Docker build paths for the current .NET base images and standalone source layout:
+  use the built-in non-root `app` identity, copy all runtime source files, and replace the absent
+  `wget` dependency with the binary's built-in `--healthcheck` probe.
+
 ## [1.0.0-alpha.18] — 2026-08-15
 
 ### Changed

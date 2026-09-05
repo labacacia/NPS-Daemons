@@ -8,6 +8,10 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NPS.Core;
+using NPS.Core.Codecs;
+using NPS.Core.Frames;
+using NPS.Core.Frames.Ncp;
 using NPS.Core.Ncp;
 
 namespace NPS.Daemon.Ingress;
@@ -21,12 +25,13 @@ namespace NPS.Daemon.Ingress;
 /// </summary>
 internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener> log) : BackgroundService
 {
+    private static readonly NpsFrameCodec HandshakeCodec = NpsFrameCodec.CreateDefault();
     private X509Certificate2? _serverCert;
     private List<X509Certificate2> _trustAnchors = new();
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        if (opts.TlsPort == 0 || opts.ServerCertPath is null)
+        if (opts.TlsPort == 0 || string.IsNullOrWhiteSpace(opts.ServerCertPath))
         {
             log.LogWarning(
                 "nps-ingress L2 TLS listener disabled (tls_port={Port}, cert={Cert}). " +
@@ -37,7 +42,7 @@ internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener
 
         try
         {
-            _serverCert   = X509CertificateLoader.LoadPkcs12FromFile(opts.ServerCertPath!, opts.ServerCertPassword);
+            _serverCert = X509CertificateLoader.LoadPkcs12FromFile(opts.ServerCertPath!, opts.ServerCertPassword);
             _trustAnchors = LoadTrustAnchors();
         }
         catch (Exception ex)
@@ -74,10 +79,10 @@ internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener
         {
             var authOpts = new SslServerAuthenticationOptions
             {
-                ServerCertificate         = _serverCert,
+                ServerCertificate = _serverCert,
                 ClientCertificateRequired = opts.RequireClientCert,
-                EnabledSslProtocols       = SslProtocols.Tls13,
-                ApplicationProtocols      = new List<SslApplicationProtocol> { new(NcpL2.Alpn) },
+                EnabledSslProtocols = SslProtocols.Tls13,
+                ApplicationProtocols = new List<SslApplicationProtocol> { new(NcpL2.Alpn) },
                 RemoteCertificateValidationCallback = (_, cert, chain, _) =>
                 {
                     if (!opts.RequireClientCert) return true;
@@ -101,20 +106,26 @@ internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener
             };
 
             await ssl.AuthenticateAsServerAsync(authOpts, ct);
+            // On some TLS 1.3/OpenSSL combinations the handshake can complete without invoking
+            // the validation callback when the peer omits its certificate. Enforce the mTLS gate
+            // again on the authenticated stream before any NCP byte can reach the backend.
+            if (opts.RequireClientCert && ssl.RemoteCertificate is null)
+            {
+                log.LogWarning("L2: connection completed TLS without the required client certificate — closing.");
+                return;
+            }
             log.LogInformation(
                 "L2: TLS handshake complete (alpn={Alpn}, bound_nid={Nid}).",
                 ssl.NegotiatedApplicationProtocol.ToString(), boundNid ?? "<none>");
 
-            // NPS-RFC-0006 §6.3 session-NID binding: peek the native-mode handshake (preamble +
-            // frames up to the IdentFrame) and require its NID to match the bound certificate NID.
-            using var prefix = new MemoryStream();
-            if (boundNid is not null && opts.RequireClientCert)
-            {
-                if (!await EnforceInlineNidBindingAsync(ssl, boundNid, prefix, ct))
-                    return; // NCP-NID-MISMATCH — close without forwarding
-            }
-
-            await ProxyToBackendAsync(ssl, prefix.ToArray(), ct);
+            // Mediate the native handshake until the post-Caps IdentFrame binds the mTLS NID.
+            // This is deliberately full duplex: a conformant client waits for the backend's
+            // CapsFrame before sending IdentFrame, so a read-ahead-only proxy would deadlock and
+            // a raw proxy would let the interactive Ident bypass the certificate-NID check.
+            await ProxyToBackendAsync(
+                ssl,
+                opts.RequireClientCert ? boundNid : null,
+                ct);
         }
         catch (Exception ex)
         {
@@ -127,61 +138,94 @@ internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener
     }
 
     /// <summary>
-    /// Reads the native-mode handshake prefix (preamble + frames up to and including the first
-    /// IdentFrame) into <paramref name="prefix"/> for later replay, and enforces the §6.3 session
-    /// NID binding. Returns false (caller closes the connection) on <c>NCP-NID-MISMATCH</c>.
-    /// Scans at most 8 frames before giving up the inline check (the connection still proceeds).
+    /// Reads the preamble plus HelloFrame before a backend connection is opened. Invalid
+    /// pre-admission framing closes silently and never consumes backend capacity.
     /// </summary>
-    private async Task<bool> EnforceInlineNidBindingAsync(SslStream ssl, string boundNid, MemoryStream prefix, CancellationToken ct)
+    private async Task<InitialHandshakeResult> ReadInitialHandshakeAsync(
+        SslStream client,
+        CancellationToken ct)
     {
         var preamble = new byte[NcpPreamble.Length];
-        if (!await ReadExactInto(ssl, preamble, ct))
-            return true; // EOF before preamble — nothing to bind; let the proxy handle close
-        prefix.Write(preamble);
-
-        for (int i = 0; i < 8; i++)
+        if (!await ReadExactInto(client, preamble, ct))
+            return InitialHandshakeResult.ClientClosed;
+        if (!NcpPreamble.TryValidate(preamble, out var preambleReason))
         {
-            var frame = await IngressFraming.ReadFrameAsync(ssl, opts.MaxHandshakeFrameBytes, ct);
-            if (frame is null) return true; // EOF before an IdentFrame — no binding to enforce
+            log.LogWarning("L2: {Code} — {Reason}; closing silently before backend admission.",
+                NcpErrorCodes.PreambleInvalid, preambleReason);
+            return InitialHandshakeResult.SilentReject;
+        }
 
-            // Bound the buffered prefix so a flood of small sub-Ident frames cannot grow it without
-            // limit before we give up the inline scan.
-            if (prefix.Length + frame.Length > opts.MaxHandshakeFrameBytes)
-            {
-                log.LogWarning("L2: handshake prefix exceeded {Max} bytes before an IdentFrame — closing.",
-                    opts.MaxHandshakeFrameBytes);
-                return false;
-            }
-            prefix.Write(frame);
+        var hello = await IngressFraming.ReadFrameAsync(client, opts.MaxHandshakeFrameBytes, ct);
+        if (hello is null)
+            return InitialHandshakeResult.ClientClosed;
+        if (FrameHeader.Parse(hello).FrameType != FrameType.Hello)
+        {
+            log.LogWarning("L2: first post-preamble frame is not HelloFrame; closing silently before backend admission.");
+            return InitialHandshakeResult.SilentReject;
+        }
+
+        return InitialHandshakeResult.Accepted([.. preamble, .. hello]);
+    }
+
+    /// <summary>
+    /// Relays post-Hello client frames one at a time until the post-Caps IdentFrame has been
+    /// checked against the mTLS-bound NID. The IdentFrame is never forwarded on a mismatch or
+    /// unverifiable payload.
+    /// </summary>
+    private async Task<IngressAdmissionResult> ForwardUntilIdentityBoundAsync(
+        SslStream client,
+        Stream backend,
+        string boundNid,
+        CancellationToken ct)
+    {
+        while (true)
+        {
+            var frame = await IngressFraming.ReadFrameAsync(client, opts.MaxHandshakeFrameBytes, ct);
+            if (frame is null)
+                return IngressAdmissionResult.ClientClosed;
 
             switch (IngressFraming.ClassifyIdent(frame, out var identNid))
             {
                 case IngressFraming.IdentScan.NotIdent:
-                    continue; // a pre-Ident handshake frame (e.g. HelloFrame) — keep scanning
+                    // Preserve transparent proxy ordering while continuing to watch for the
+                    // mandatory per-connection IdentFrame. The backend remains authoritative for
+                    // whether a particular pre-Ident frame is legal at the NCP/NWP layer.
+                    await backend.WriteAsync(frame, ct);
+                    await backend.FlushAsync(ct);
+                    continue;
 
                 case IngressFraming.IdentScan.Unverifiable:
-                    // An IdentFrame was presented but its NID cannot be verified (non-JSON tier or
-                    // malformed). Fail the §6.3 binding closed — do NOT proxy it through unchecked.
                     log.LogWarning("L2: {Code} — IdentFrame present but NID unverifiable (non-conformant tier/payload).",
                         NcpL2.NidMismatchCode);
-                    return false;
+                    return IngressAdmissionResult.RejectNid(
+                        "IdentFrame NID is missing or cannot be verified.");
 
                 case IngressFraming.IdentScan.Nid:
                     var bind = NipMtlsValidator.CheckSessionNidBinding(boundNid, identNid!);
                     if (!bind.Ok)
                     {
                         log.LogWarning("L2: {Code} — {Msg}", bind.ErrorCode, bind.Message);
-                        return false;
+                        return IngressAdmissionResult.RejectNid(
+                            bind.Message ?? "Session NID mismatch.");
                     }
+                    await backend.WriteAsync(frame, ct);
+                    await backend.FlushAsync(ct);
                     log.LogInformation("L2: session NID binding ok (nid={Nid}).", boundNid);
-                    return true;
+                    return IngressAdmissionResult.Admitted;
             }
         }
-        // No IdentFrame within the scan window. In the interactive handshake the Ident may not have
-        // been sent yet (the client awaits the backend CapsFrame first); proceed and let the NCP
-        // backend enforce its own handshake. A pipelined IdentFrame, by contrast, was already
-        // checked above.
-        return true;
+    }
+
+    private static async Task RejectNidMismatchAsync(SslStream ssl, string message, CancellationToken ct)
+    {
+        var wire = HandshakeCodec.Encode(new ErrorFrame
+        {
+            Status = NpsStatusCodes.AuthUnauthenticated,
+            Error = NcpL2.NidMismatchCode,
+            Message = message,
+        }, EncodingTier.Json);
+        await ssl.WriteAsync(wire, ct);
+        await ssl.FlushAsync(ct);
     }
 
     private static async Task<bool> ReadExactInto(Stream s, byte[] buf, CancellationToken ct)
@@ -196,36 +240,128 @@ internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener
         return true;
     }
 
-    private async Task ProxyToBackendAsync(SslStream client, byte[] prefix, CancellationToken ct)
+    private async Task ProxyToBackendAsync(SslStream client, string? boundNid, CancellationToken ct)
     {
+        if (boundNid is null)
+        {
+            using var rawBackend = new TcpClient();
+            await rawBackend.ConnectAsync(opts.BackendHost, opts.BackendPort, ct);
+            await ProxyRawAsync(client, rawBackend, rawBackend.GetStream(), ct);
+            return;
+        }
+
+        using var admissionCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        admissionCts.CancelAfter(TimeSpan.FromMilliseconds(opts.HandshakeTimeoutMs));
+
+        InitialHandshakeResult initial;
+        try
+        {
+            initial = await ReadInitialHandshakeAsync(client, admissionCts.Token);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning("L2: native handshake admission exceeded {TimeoutMs} ms — closing.",
+                opts.HandshakeTimeoutMs);
+            return;
+        }
+        if (initial.Outcome != IngressAdmissionOutcome.Admitted)
+            return;
+
         using var backend = new TcpClient();
-        await backend.ConnectAsync(opts.BackendHost, opts.BackendPort, ct);
+        try
+        {
+            await backend.ConnectAsync(opts.BackendHost, opts.BackendPort, admissionCts.Token);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning("L2: backend connection exceeded the {TimeoutMs} ms admission window — closing.",
+                opts.HandshakeTimeoutMs);
+            return;
+        }
         var bs = backend.GetStream();
-        // Replay the handshake prefix consumed by the inline NID-binding check, then bidirectional
-        // copy. The RFC-0001 preamble and all NCP frames travel inside TLS (RFC-0006 §6.2).
-        if (prefix.Length > 0)
-            await bs.WriteAsync(prefix, ct);
+        try
+        {
+            await bs.WriteAsync(initial.Wire!, admissionCts.Token);
+            await bs.FlushAsync(admissionCts.Token);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning("L2: initial handshake forwarding exceeded the {TimeoutMs} ms admission window — closing.",
+                opts.HandshakeTimeoutMs);
+            return;
+        }
+        var admission = ForwardUntilIdentityBoundAsync(client, bs, boundNid, admissionCts.Token);
+        var backendToClient = bs.CopyToAsync(client, admissionCts.Token);
+
+        var first = await Task.WhenAny(admission, backendToClient);
+        if (first == backendToClient)
+        {
+            admissionCts.Cancel();
+            await ObserveCompletionAsync(backendToClient);
+            await ObserveCompletionAsync(admission);
+            return;
+        }
+
+        IngressAdmissionResult result;
+        try
+        {
+            result = await admission;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning("L2: native handshake admission exceeded {TimeoutMs} ms — closing.",
+                opts.HandshakeTimeoutMs);
+            backend.Close();
+            await ObserveCompletionAsync(backendToClient);
+            return;
+        }
+        admissionCts.CancelAfter(Timeout.InfiniteTimeSpan);
+
+        if (result.Outcome != IngressAdmissionOutcome.Admitted)
+        {
+            backend.Close();
+            await ObserveCompletionAsync(backendToClient);
+            if (result.Outcome == IngressAdmissionOutcome.RejectNid)
+                await RejectNidMismatchAsync(client, result.Message!, ct);
+            return;
+        }
 
         var clientToBackend = client.CopyToAsync(bs, ct); // request bytes
-        var backendToClient = bs.CopyToAsync(client, ct); // response bytes
 
         // Do NOT tear down as soon as either side finishes (Task.WhenAny truncates the in-flight
         // direction). When the client half-closes, signal the backend and drain its response in
         // full; when the backend closes first, its response is already fully relayed.
-        var finished = await Task.WhenAny(clientToBackend, backendToClient);
-        if (finished == clientToBackend)
-        {
-            try { backend.Client.Shutdown(SocketShutdown.Send); } catch { /* backend already gone */ }
-            await SwallowAsync(backendToClient); // deliver the remaining response
-        }
-        await SwallowAsync(clientToBackend);
-        await SwallowAsync(backendToClient);
+        await BidirectionalProxyCompletion.AwaitAsync(
+            clientToBackend,
+            backendToClient,
+            () =>
+            {
+                try { backend.Client.Shutdown(SocketShutdown.Send); }
+                catch { /* backend already gone */ }
+            });
     }
 
-    /// <summary>Awaits a copy task, swallowing the teardown-race exception when a stream is closed.</summary>
-    private static async Task SwallowAsync(Task copy)
+    private static async Task ProxyRawAsync(
+        SslStream client,
+        TcpClient backend,
+        Stream backendStream,
+        CancellationToken ct)
     {
-        try { await copy; }
+        var clientToBackend = client.CopyToAsync(backendStream, ct);
+        var backendToClient = backendStream.CopyToAsync(client, ct);
+        await BidirectionalProxyCompletion.AwaitAsync(
+            clientToBackend,
+            backendToClient,
+            () =>
+            {
+                try { backend.Client.Shutdown(SocketShutdown.Send); }
+                catch { /* backend already gone */ }
+            });
+    }
+
+    private static async Task ObserveCompletionAsync(Task task)
+    {
+        try { await task; }
         catch (OperationCanceledException) { }
         catch (IOException) { }
         catch (ObjectDisposedException) { }
@@ -242,5 +378,62 @@ internal sealed class NcpTlsListener(IngressOptions opts, ILogger<NcpTlsListener
             catch (Exception ex) { log.LogWarning(ex, "L2: skipping unreadable trust anchor {File}.", file); }
         }
         return list;
+    }
+}
+
+internal enum IngressAdmissionOutcome
+{
+    Admitted,
+    ClientClosed,
+    SilentReject,
+    RejectNid,
+}
+
+internal sealed record IngressAdmissionResult(IngressAdmissionOutcome Outcome, string? Message = null)
+{
+    public static IngressAdmissionResult Admitted { get; } = new(IngressAdmissionOutcome.Admitted);
+    public static IngressAdmissionResult ClientClosed { get; } = new(IngressAdmissionOutcome.ClientClosed);
+    public static IngressAdmissionResult RejectNid(string message) =>
+        new(IngressAdmissionOutcome.RejectNid, message);
+}
+
+internal sealed record InitialHandshakeResult(IngressAdmissionOutcome Outcome, byte[]? Wire = null)
+{
+    public static InitialHandshakeResult ClientClosed { get; } =
+        new(IngressAdmissionOutcome.ClientClosed);
+    public static InitialHandshakeResult SilentReject { get; } =
+        new(IngressAdmissionOutcome.SilentReject);
+    public static InitialHandshakeResult Accepted(byte[] wire) =>
+        new(IngressAdmissionOutcome.Admitted, wire);
+}
+
+/// <summary>
+/// Coordinates bidirectional proxy completion without truncating the response after a client
+/// half-close. Kept separate from socket setup so the state transition has deterministic tests.
+/// </summary>
+internal static class BidirectionalProxyCompletion
+{
+    internal static async Task AwaitAsync(
+        Task clientToBackend,
+        Task backendToClient,
+        Action signalBackendSendCompleted)
+    {
+        var finished = await Task.WhenAny(clientToBackend, backendToClient);
+        if (finished == clientToBackend)
+        {
+            signalBackendSendCompleted();
+            await SwallowAsync(backendToClient); // deliver the remaining response
+        }
+        await SwallowAsync(clientToBackend);
+        await SwallowAsync(backendToClient);
+    }
+
+    /// <summary>Awaits a copy task, swallowing teardown-race exceptions from closed streams.</summary>
+    private static async Task SwallowAsync(Task copy)
+    {
+        try { await copy; }
+        catch (OperationCanceledException) { }
+        catch (IOException) { }
+        catch (ObjectDisposedException) { }
     }
 }

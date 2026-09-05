@@ -6,10 +6,21 @@ English | [中文版](./architecture.cn.md)
 > spread across three layers; each layer is independently scalable and has
 > distinct trust / failure boundaries.
 >
-> Status — v1.0-alpha.4: `npsd` (L1+), `nps-registry` (SQLite-backed
-> real registry), and `nps-ledger` (Phase 2: Merkle + STH + inclusion
-> proofs) are fully functional. `nps-runner`, `nps-ingress`, and
-> `nps-cloud-ca` remain skeleton projects filling in across alpha.5 → beta.
+> Status — alpha.18 source / alpha.19 debt-closure boundary: `npsd` multiplexes
+> HTTP and local-dev native NCP on its configured loopback port, with bounded
+> preamble/Hello negotiation and Anchor ACK/cache. Its per-NID inbox now uses
+> durable SQLite with restart-safe TTL, priority and acknowledgement semantics.
+> Resident/hybrid push is deliberately declined for this ephemeral L1 profile,
+> and full Node L1 remains unclaimed. `nps-ingress` implements the native
+> TLS 1.3 / ALPN `nps/1.0` / mTLS / session-NID binding transport boundary.
+> The applicable `TC-N2-Tls-01..04` family is executable; broader admission
+> roadmap items are explicitly dispositioned and not claimed as transport
+> capabilities. `nps-runner` implements inbox dispatch, portable OCI SpawnSpec
+> resolution/execution, bounded worker lifecycle, and durable SQLite task leases
+> with cross-process claim, restart/reclaim, terminal dedup and stale-owner
+> fencing evidence. Full TaskFrame DAG/Saga L3 certification is not claimed;
+> its per-case manifest records the exact boundary. Other daemon closure work
+> is tracked separately.
 
 ---
 
@@ -31,7 +42,7 @@ English | [中文版](./architecture.cn.md)
 │ │ ③ nps-ingress    │                  │ ④ nps-registry   │           │
 │ │ Public Internet  │                  │ Cross-machine    │           │
 │ │ NPS-over-TLS     │                  │ NDP resolve+graph│           │
-│ │ rate-limit + CGN │                  │ (L2 stage)       │           │
+│ │ TLS + NID bind   │                  │ (L2 stage)       │           │
 │ └────────┬─────────┘                  └────────┬─────────┘           │
 └──────────┼─────────────────────────────────────┼─────────────────────┘
            ▼                                     ▼
@@ -54,15 +65,31 @@ English | [中文版](./architecture.cn.md)
 
 #### ① `npsd` — Protocol ingress + state host
 
-- **Listens on** `127.0.0.1:17433` by default (unified port for the entire NPS suite).
-- **Handles** NCP handshake (including the [NPS-RFC-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.md) connection preamble), frame encode/decode, AnnounceFrame emission, root Ed25519 keypair management, sub-NID issuance for local agents, the per-host session registry, and the per-NID inbox queue used for `ephemeral` activation_mode delivery.
+- **Listens on** `127.0.0.1:17433` by default and losslessly multiplexes HTTP control traffic with local-dev native NCP on that unified port.
+- **Implemented native boundary**: bounded [NPS-RFC-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.md) preamble and Hello/Caps negotiation, negotiated encoding/payload enforcement, canonical AnchorFrame ACK/cache, and deterministic silent/error close behavior. Public TLS 1.3/mTLS termination belongs to `nps-ingress`.
+- **Implemented state boundary**: root Ed25519 keypair management; sub-NID issuance and bounded pre-expiry renewal; publisher-signed ephemeral NDP announcements with persistent monotonic sequence; and a durable per-NID SQLite inbox used for `ephemeral` HTTP pull with explicit acknowledgement. Managed agent keys are encrypted at rest. Identity/announcement sequence, undelivered frames, absolute TTL, priority order and acknowledgements survive daemon restart.
+- **Explicit limit**: full Node L1 is not claimed. Exact NCP/NDP/NWP evidence and remaining gaps are recorded in [`NPS-NODE-L1-MANIFEST.json`](../npsd/conformance/NPS-NODE-L1-MANIFEST.json). Resident/hybrid push is optional at L1 and explicitly declined by this profile. BYO-key agents are not auto-announced because npsd does not possess their private key and must not sign as the publisher.
 - **Why always-on**: identity and inbox cannot follow a session — persistent state needs a host. Every NPS client on the machine (MCP shim, resident agent, worker, ingress shim) connects through this daemon.
 - **Why not merged into anything else**: protocol layer is business-agnostic and shared by all upper layers; folding it into a business process pollutes the trust domain.
 - **Reference compliance**: target is `NPS-Node Profile L1` (see [`spec/services/NPS-Node-Profile.md`](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) and the L1 conformance suite at [`spec/services/conformance/NPS-Node-L1.md`](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md)).
 
 #### ② `nps-runner` — Task scheduler / FaaS runtime *(L3 stage)*
 
-- **Watches** the inbox for messages addressed to `ephemeral`-mode NIDs, consults the per-NID `spawn_spec_ref` (NDP §3.1), spawns the corresponding worker subprocess, and manages its lifecycle (timeout, concurrency cap, retry, result reclamation).
+- **Implemented runtime boundary**: self-registers with local `npsd`, polls its
+  inbox, validates inline or referenced portable OCI SpawnSpecs, executes OCI
+  containers (with a legacy direct-subprocess compatibility path), bounds
+  concurrency/idle/max-runtime, captures logs, and reports completion.
+- **Implemented ownership behavior**: atomically claims and periodically renews
+  leases in a persistent SQLite file shared by coordinating runner processes.
+  Fresh per-start instance identities fence stale processes; terminal records
+  survive restart; lease loss cancels the worker without terminal write, inbox
+  ack, or notification.
+- **Explicit limit**: full Node L3 certification is not claimed because the
+  current inbox contract executes individual SpawnSpecs rather than multi-node
+  TaskFrames. The exact verified/partial/unexecuted cases are in
+  [`NPS-NODE-L3-MANIFEST.json`](../nps-runner/conformance/NPS-NODE-L3-MANIFEST.json),
+  with the broader capability boundary in
+  [`NPS-RUNNER-CAPABILITIES.json`](../nps-runner/conformance/NPS-RUNNER-CAPABILITIES.json).
 - **Why always-on**: messages arrive any time; the scheduler must be there to spawn. Workers are ephemeral but the scheduler is not.
 - **Why separated from `npsd`**: resource profile is radically different — `npsd` is steady-state, `nps-runner` produces process-spawn bursts; failure isolation is critical (a worker crash must not take the NCP layer down); trust boundary differs (`nps-runner` runs user-supplied Agent SDK code, the protocol layer must not have that permission surface).
 
@@ -70,7 +97,8 @@ English | [中文版](./architecture.cn.md)
 
 #### ③ `nps-ingress` — Internet ingress
 
-- **Translates** Internet-side NPS-over-TLS traffic into local frames. Performs TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, reputation checks (against [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)), DDoS defense.
+- **Implemented transport boundary**: terminates native NCP over TLS 1.3 with ALPN `nps/1.0`; default-on mTLS validates NIP client certificates to configured trust anchors; the post-Caps `IdentFrame` NID is bound to the certificate NID before that Ident is forwarded; handshake time/frame size and pre-admission framing are bounded; accepted streams are proxied to the local NCP backend and responses are drained after client half-close. `TC-N2-Tls-01..04` execute over real sockets.
+- **Boundary disposition**: topology, Bridge, HA and Registry families apply to other IUT roles. Rate limiting, NeuronHub customer auth, CGN debit, reputation, Anchor middleware and broad DDoS controls are not advertised as transport capabilities; their product/AaaS/optional-composition/deployment ownership is recorded in [`NPS-INGRESS-ADMISSION-DISPOSITION.json`](../nps-ingress/conformance/NPS-INGRESS-ADMISSION-DISPOSITION.json).
 - **Why always-on**: the publicly bound port must always be listening.
 - **Why separated from `npsd`**: `npsd` is bound to loopback by default; the ingress daemon binds public addresses. Attack surface, security posture, and operational scope differ. `npsd` failure affects all local NPS traffic; ingress failure only affects external inbound — the two MUST be independently restartable.
 - **Note**: This is a **process-level** name; the *spec*-level role of cluster control plane is now called **Anchor Node** in NWP, see [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md). The `nps-ingress` process MAY host an Anchor Node middleware but is not constrained to.
@@ -109,7 +137,11 @@ English | [中文版](./architecture.cn.md)
 | ⑤ | `tools/daemons/nps-cloud-ca/` | `NpsCloudCa.csproj` | `nps-cloud-ca` | `LabAcacia.NPS.Daemon.CloudCa` |
 | ⑥ | `tools/daemons/nps-ledger/` | `NpsLedger.csproj` | `nps-ledger` | `LabAcacia.NPS.Daemon.Ledger` |
 
-## Phasing across alpha + beta
+## Historical alpha-to-beta phasing record
+
+The table below preserves the alpha.4 planning snapshot; it is not a current
+capability matrix. Current `nps-ingress` and `nps-runner` behavior and gaps are
+stated in their sections above and in the daemon READMEs.
 
 | Daemon | alpha.3 | alpha.4 (this release) | alpha.11+ | beta / 1.0 |
 |--------|---------|------------------------|----------|------------|

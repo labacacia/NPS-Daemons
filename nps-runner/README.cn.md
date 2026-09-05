@@ -7,10 +7,16 @@
 > 超时、并发上限、完成通知）。完整六-daemon 拓扑见
 > [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
 
-## 状态 —— alpha.18 候选
+## 状态 —— alpha.18 源码 / alpha.19 债务收口候选
 
-Inbox 监听、CR-0007 任务租约、portable OCI SpawnSpec 执行与旧版直接子进程
-兼容路径均已实现。具体部署的 Layer-3 认证仍需单独执行一致性验证。
+Inbox 监听、portable OCI SpawnSpec 执行、引用解析、周期续租、租约丢失时取消
+worker，以及旧版直接子进程兼容路径均已实现。任务租约与终态去重使用持久化
+SQLite 状态文件；指向同一文件的 runner 进程会协调 claim，以每次启动的新
+instance identity 围栏旧进程，回收过期租约，并在重启后保留终态去重记录。
+完整 Layer-3 TaskFrame DAG/Saga 认证仍不作声明；逐 case 边界记录在
+[`conformance/NPS-NODE-L3-MANIFEST.json`](./conformance/NPS-NODE-L3-MANIFEST.json)，
+能力契约见
+[`conformance/NPS-RUNNER-CAPABILITIES.json`](./conformance/NPS-RUNNER-CAPABILITIES.json)。
 
 ## 快速上手
 
@@ -27,6 +33,7 @@ docker build -f tools/daemons/nps-runner/Dockerfile -t labacacia/nps-runner:1.0.
 docker run --rm \
   -e NPSD_URL=http://127.0.0.1:17433 \
   -e NPS_RUNNER_LOG_DIR=/var/log/nps-runner \
+  -v nps-runner-state:/var/lib/nps-runner \
   labacacia/nps-runner:1.0.0-alpha.18
 ```
 
@@ -41,6 +48,7 @@ docker run --rm \
 | `NPS_RUNNER_POLL_INTERVAL_MS` | `1000` | Inbox 轮询间隔（同时设定长轮询 `wait` 窗口） |
 | `NPS_RUNNER_MAX_CONCURRENT_WORKERS` | `8` | 同时运行的 worker 进程上限 |
 | `NPS_RUNNER_LOG_DIR` | `/tmp/nps-runner-logs` | 每个 worker 的 `{task_id}.log` 目录 |
+| `NPS_RUNNER_STATE_PATH` | `/tmp/nps-runner-state/leases.db`（镜像内：`/var/lib/nps-runner/leases.db`） | 持久化 SQLite 租约与终态去重数据库；副本仅在使用同一份且锁语义正确的存储时协调 |
 | `NPS_RUNNER_OCI_RUNTIME` | `docker` | 执行 portable SpawnSpec 的 OCI 兼容 CLI |
 | `NPS_REGISTRY_URL` | `http://127.0.0.1:17436` | 解析 `nwp://` SpawnSpec 引用的 NDP registry |
 
@@ -119,12 +127,19 @@ alpha.17 之前的直接子进程格式继续作为兼容路径：
 
 ### 3. Worker 生命周期
 
-1. 收到消息 → 解析引用并校验 spawn spec → 检查并发上限。
-2. 达到上限：消息保持未 ack 状态，下次轮询周期重新出现。
-3. 否则：获取任务租约并启动 OCI 容器或旧版直接子进程。
+1. 收到消息 → 解析引用并校验 spawn spec → 原子获取持久化任务租约。
+2. 遇到存活 claim 冲突时保持消息未 ack；发现持久化终态重复项时直接 ack，且不重复执行。
+3. claim 成功或回收过期租约后获取 worker slot，并启动 OCI 容器或旧版直接子进程；若达到并发上限，则释放自有租约并保持消息未 ack。
 4. stdout + stderr 捕获至 `NPS_RUNNER_LOG_DIR/{task_id}.log`。
-5. 监控循环（5 秒 tick）续租，并检查空闲超时和最大运行时限。
-6. 退出（任何原因）：ack inbox 消息；若设置了 `reply_to`，向该 NID 投递完成通知（JSON）。
+5. 续租循环按有界租约窗口的一半刷新持久化租约；worker 监控循环另以 5 秒
+   tick 检查空闲超时和最大运行时限。
+6. 进入终态时，原子记录持久化去重状态并释放租约；之后才 ack inbox 消息；
+   若设置 `reply_to`，再向该 NID 投递完成通知（JSON）。
+7. 若租约 ownership 丢失或过期，则取消旧 worker，且不记录终态、不 ack、不通知。
+
+要实现重启恢复，`NPS_RUNNER_STATE_PATH` 必须位于持久化存储；所有参与协调的
+runner 进程必须指向同一 SQLite 文件。跨主机使用还要求底层存储提供正确的
+SQLite 锁与持久化语义；本实现不对一般网络文件系统作保证。
 
 ### 4. 完成通知
 
@@ -152,12 +167,15 @@ worker 退出且设置了 `reply_to` 时，nps-runner 投递：
 
 ## 验证
 
-独立 daemon bundle 在 `spec/conformance/nop` 下携带共用 NOP fixtures。
-运行：
+从 monorepo 根目录运行：
 
 ```bash
-dotnet test nps-runner/tests/NpsRunner.Tests.csproj -c Release
+dotnet test tools/daemons/nps-runner/tests/NpsRunner.Tests.csproj -c Release
 ```
+
+独立 daemon bundle 使用
+`dotnet test nps-runner/tests/NpsRunner.Tests.csproj -c Release`，并在
+`spec/conformance/nop` 下携带共用 NOP fixtures。
 
 ## 许可证
 

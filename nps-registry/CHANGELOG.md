@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — alpha.19 debt closure
+
+### Changed
+
+- Repaired both Docker build paths for the current .NET base images and standalone
+  source layout: use the built-in non-root `app` identity, copy all runtime source
+  files, and replace the absent `wget` dependency with the binary's built-in
+  `--healthcheck` probe.
+
 ## [1.0.0-alpha.18] — 2026-08-15
 
 ### Changed

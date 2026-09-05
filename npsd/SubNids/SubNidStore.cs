@@ -24,7 +24,8 @@ namespace NPS.Daemon.Npsd.SubNids;
 ///   metadata_json   TEXT,
 ///   revoked         INTEGER NOT NULL DEFAULT 0,
 ///   revoked_at      TEXT,
-///   revoke_reason   TEXT
+///   revoke_reason   TEXT,
+///   graph_seq       INTEGER NOT NULL DEFAULT 0
 /// );
 /// CREATE INDEX idx_sub_nids_issued_at ON sub_nids(issued_at);
 /// </code>
@@ -82,7 +83,8 @@ public sealed class SubNidStore : IDisposable
               metadata_json TEXT,
               revoked       INTEGER NOT NULL DEFAULT 0,
               revoked_at    TEXT,
-              revoke_reason TEXT
+              revoke_reason TEXT,
+              graph_seq     INTEGER NOT NULL DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS idx_sub_nids_issued_at ON sub_nids(issued_at);
             CREATE TABLE IF NOT EXISTS serial_counter (
@@ -92,6 +94,16 @@ public sealed class SubNidStore : IDisposable
             INSERT OR IGNORE INTO serial_counter (id, next_serial) VALUES (1, 1);
             """;
         cmd.ExecuteNonQuery();
+
+        // Additive migration for stores created before alpha.19.
+        using var columns = conn.CreateCommand();
+        columns.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sub_nids') WHERE name = 'graph_seq'";
+        if (Convert.ToInt64(columns.ExecuteScalar()) == 0)
+        {
+            using var migrate = conn.CreateCommand();
+            migrate.CommandText = "ALTER TABLE sub_nids ADD COLUMN graph_seq INTEGER NOT NULL DEFAULT 0";
+            migrate.ExecuteNonQuery();
+        }
     }
 
     private SqliteConnection OpenConnection()
@@ -184,6 +196,85 @@ public sealed class SubNidStore : IDisposable
         return list;
     }
 
+    /// <summary>Returns active, unexpired agents whose private key is managed by npsd.</summary>
+    public IReadOnlyList<SubNidRecord> ListAnnounceable(DateTimeOffset now)
+    {
+        using var conn = OpenConnection();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT * FROM sub_nids
+            WHERE revoked = 0 AND expires_at > $now AND priv_key_enc IS NOT NULL
+            ORDER BY nid
+            """;
+        cmd.Parameters.AddWithValue("$now", now.ToString("O"));
+        var list = new List<SubNidRecord>();
+        using var rdr = cmd.ExecuteReader();
+        while (rdr.Read()) list.Add(Map(rdr));
+        return list;
+    }
+
+    /// <summary>
+    /// Atomically reserves the next per-agent announcement sequence. Returns
+    /// null if the record became revoked, expired, or unmanaged before update.
+    /// </summary>
+    public ulong? NextGraphSequence(string nid, DateTimeOffset now)
+    {
+        using var conn = OpenConnection();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE sub_nids
+            SET graph_seq = graph_seq + 1
+            WHERE nid = $nid AND revoked = 0 AND expires_at > $now AND priv_key_enc IS NOT NULL
+            RETURNING graph_seq
+            """;
+        cmd.Parameters.AddWithValue("$nid", nid);
+        cmd.Parameters.AddWithValue("$now", now.ToString("O"));
+        var value = cmd.ExecuteScalar();
+        return value is null ? null : checked((ulong)Convert.ToInt64(value));
+    }
+
+    /// <summary>Atomically replaces an active credential during renewal.</summary>
+    public bool TryRenew(
+        string nid,
+        string expectedSerial,
+        string newSerial,
+        DateTimeOffset issuedAt,
+        DateTimeOffset expiresAt)
+    {
+        using var conn = OpenConnection();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            UPDATE sub_nids
+            SET serial = $new_serial, issued_at = $issued_at, expires_at = $expires_at
+            WHERE nid = $nid AND serial = $expected_serial AND revoked = 0
+            """;
+        cmd.Parameters.AddWithValue("$nid", nid);
+        cmd.Parameters.AddWithValue("$expected_serial", expectedSerial);
+        cmd.Parameters.AddWithValue("$new_serial", newSerial);
+        cmd.Parameters.AddWithValue("$issued_at", issuedAt.ToString("O"));
+        cmd.Parameters.AddWithValue("$expires_at", expiresAt.ToString("O"));
+        return cmd.ExecuteNonQuery() == 1;
+    }
+
+    public (long Total, long Managed, long ActiveManaged) Counts(DateTimeOffset now)
+    {
+        using var conn = OpenConnection();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT COUNT(*),
+                   SUM(CASE WHEN priv_key_enc IS NOT NULL THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN priv_key_enc IS NOT NULL AND revoked = 0 AND expires_at > $now THEN 1 ELSE 0 END)
+            FROM sub_nids
+            """;
+        cmd.Parameters.AddWithValue("$now", now.ToString("O"));
+        using var rdr = cmd.ExecuteReader();
+        rdr.Read();
+        return (
+            rdr.GetInt64(0),
+            rdr.IsDBNull(1) ? 0 : rdr.GetInt64(1),
+            rdr.IsDBNull(2) ? 0 : rdr.GetInt64(2));
+    }
+
     /// <summary>Marks a NID as revoked. Returns false if the NID is unknown.</summary>
     public bool MarkRevoked(string nid, string reason, DateTimeOffset at)
     {
@@ -219,5 +310,6 @@ public sealed class SubNidStore : IDisposable
                               ? null : DateTimeOffset.Parse(rdr.GetString(rdr.GetOrdinal("revoked_at"))),
         RevokeReason     = rdr.IsDBNull(rdr.GetOrdinal("revoke_reason"))
                               ? null : rdr.GetString(rdr.GetOrdinal("revoke_reason")),
+        GraphSeq         = checked((ulong)rdr.GetInt64(rdr.GetOrdinal("graph_seq"))),
     };
 }

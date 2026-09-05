@@ -18,23 +18,23 @@
 
 ## 仓库内容
 
-| 层 | Daemon | 默认端口 | `v1.0.0-alpha.18` 状态 |
+| 层 | Daemon | 默认端口 | alpha.19 技债收口候选状态 |
 |----|--------|----------|------------------------|
-| 1 | [`npsd`](./npsd/) | `127.0.0.1:17433` | L1 最小集：HTTP 监听、root keypair 生成（POSIX `0600`）、`/.nwm`、`/health`。|
-| 1 | [`nps-runner`](./nps-runner/) | —（worker）| Phase 1 骨架 —— Generic Host 脚手架 + 30 秒心跳。Inbox 监听 + spawn-spec 解析在 alpha.11+。|
-| 2 | [`nps-ingress`](./nps-ingress/) | `:8080` | Phase 1 骨架 —— 公网 HTTP 监听 + `/health`。TLS 卸载 + rate limit + auth + CGN 计费 + reputation 查询在 alpha.4 → alpha.5。|
-| 2 | [`nps-registry`](./nps-registry/) | `:17436` | Phase 1 骨架 —— NDP `Resolve` / `Graph` / `Announce` 全部返回 `NDP-REGISTRY-UNAVAILABLE`，方便消费者预先接线 + 优雅降级。SQLite 实仓在 alpha.4。|
+| 1 | [`npsd`](./npsd/) | `127.0.0.1:17433` | 主机 root/sub-NID、有界 native NCP、持久 per-NID inbox、sub-NID 续租与签名 ephemeral NDP 在线广播；不宣称完整 L1。|
+| 1 | [`nps-runner`](./nps-runner/) | —（worker）| Inbox 驱动的 portable OCI/legacy 执行，具备有界生命周期、持久 SQLite 租约、续租、旧属主围栏和终态去重；不宣称完整 TaskFrame DAG/Saga L3。|
+| 2 | [`nps-ingress`](./nps-ingress/) | `:8080` 健康面，`:17443` native | TLS 1.3 + ALPN `nps/1.0`、默认开启 mTLS、session-NID 绑定、有界准入与本机 NCP 代理；明确不包含产品/AaaS 控制。|
+| 2 | [`nps-registry`](./nps-registry/) | `:17436` | SQLite Announce/Resolve/Graph、TTL 过期、单调 graph sequence、多 Anchor epoch 处理与有界 federation 防环。|
 
 每个 daemon 在自己的子目录里有独立的 `Dockerfile` / `docker-compose.yml` /
 README —— 共享发布节奏、共享基础镜像，但独立构建独立发版。
 
 ### 不在本仓的部分
 
-NPS 三层中的**信任锚 / 云**层在 GitHub `innolotus` 组织下两个私有仓里，
-跟 NPS Cloud 一起发（2027 Q1+）：
+NPS 三层中的**信任锚 / 云** daemon 由独立的 LabAcacia 仓库维护，
+不会物化进本四-daemon bundle：
 
-- `labacacia/NPS-Cloud-CA` —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
-- `labacacia/NPS-Ledger` —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
+- [`labacacia/NPS-Cloud-CA`](https://github.com/labacacia/NPS-Cloud-CA) —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
+- [`labacacia/NPS-Ledger`](https://github.com/labacacia/NPS-Ledger) —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
   的 Certificate-Transparency 风格 NID 声誉日志。
 
 **今天**就要自托管 CA 的话用 [`labacacia/nip-ca-server`](https://gitee.com/labacacia/nip-ca-server)
@@ -158,12 +158,12 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 ## 架构
 
-完整的三层参考拓扑（含 2 个私有的信任锚 daemon）见
+完整的三层参考拓扑（含 2 个独立维护的信任锚 daemon）见
 [`docs/architecture.cn.md`](./docs/architecture.cn.md)。简版：
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Layer 3（私有 —— innolotus org，NPS Cloud 2027 Q1+）    │
+│ Layer 3（独立的 LabAcacia 仓库）                        │
 │   nps-cloud-ca · nps-ledger                             │
 ├─────────────────────────────────────────────────────────┤
 │ Layer 2（本仓库）—— 网络入口                            │
