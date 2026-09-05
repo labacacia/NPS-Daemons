@@ -6,20 +6,17 @@ COPY NpsRegistry.csproj ./
 COPY nuget.config       ./
 RUN dotnet restore NpsRegistry.csproj --configfile nuget.config
 
-COPY Program.cs         ./
+COPY *.cs               ./
 RUN dotnet publish NpsRegistry.csproj -c Release -o /app/publish --no-restore
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-RUN groupadd --gid 1000 npsreg \
- && useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin npsreg
-
 COPY --from=build /app/publish .
-RUN chown -R npsreg:npsreg /app
+RUN chown -R app:app /app
 
-USER npsreg
+USER app
 
 # NDP optional dedicated port (NPS-4 §2).
 EXPOSE 17436
@@ -28,6 +25,6 @@ ENV ASPNETCORE_ENVIRONMENT=Docker
 ENV ASPNETCORE_URLS=http://0.0.0.0:17436
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q -O - http://localhost:17436/health > /dev/null || exit 1
+  CMD ["/app/nps-registry", "--healthcheck"]
 
 ENTRYPOINT ["/app/nps-registry"]

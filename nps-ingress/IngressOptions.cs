@@ -33,21 +33,30 @@ internal sealed record IngressOptions
     /// </summary>
     public int MaxHandshakeFrameBytes { get; init; } = 1 << 20; // 1 MiB
 
+    /// <summary>
+    /// Maximum time allowed for the preamble, HelloFrame, and authenticated IdentFrame admission
+    /// sequence. This bounds unauthenticated slow connections at the public TLS edge.
+    /// </summary>
+    public int HandshakeTimeoutMs { get; init; } = 10_000;
+
     public static IngressOptions FromEnvironment() => new()
     {
-        HealthPort             = IntEnv("NPSINGRESS_PORT", 8080),
-        TlsPort                = IntEnv("NPSINGRESS_TLS_PORT", 17443),
-        BackendHost            = Env("NPSINGRESS_BACKEND_HOST", "127.0.0.1"),
-        BackendPort            = IntEnv("NPSINGRESS_BACKEND_PORT", 17433),
-        ServerCertPath         = EnvOrNull("NPSINGRESS_CERT_PATH"),
-        ServerCertPassword     = EnvOrNull("NPSINGRESS_CERT_PASSWORD"),
-        TrustAnchorsDir        = EnvOrNull("NPSINGRESS_TRUST_ANCHORS_DIR"),
-        RequireClientCert      = BoolEnv("NPSINGRESS_REQUIRE_CLIENT_CERT", true),
-        MaxHandshakeFrameBytes = IntEnv("NPSINGRESS_MAX_HANDSHAKE_FRAME_BYTES", 1 << 20),
+        HealthPort = IntEnv("NPSINGRESS_PORT", 8080),
+        TlsPort = IntEnv("NPSINGRESS_TLS_PORT", 17443),
+        BackendHost = Env("NPSINGRESS_BACKEND_HOST", "127.0.0.1"),
+        BackendPort = IntEnv("NPSINGRESS_BACKEND_PORT", 17433),
+        ServerCertPath = EnvOrNull("NPSINGRESS_CERT_PATH"),
+        ServerCertPassword = EnvOrNull("NPSINGRESS_CERT_PASSWORD"),
+        TrustAnchorsDir = EnvOrNull("NPSINGRESS_TRUST_ANCHORS_DIR"),
+        RequireClientCert = BoolEnv("NPSINGRESS_REQUIRE_CLIENT_CERT", true),
+        MaxHandshakeFrameBytes = PositiveIntEnv("NPSINGRESS_MAX_HANDSHAKE_FRAME_BYTES", 1 << 20),
+        HandshakeTimeoutMs = PositiveIntEnv("NPSINGRESS_HANDSHAKE_TIMEOUT_MS", 10_000),
     };
 
-    static string  Env(string k, string d)  => Environment.GetEnvironmentVariable(k) ?? d;
-    static string? EnvOrNull(string k)       => Environment.GetEnvironmentVariable(k);
-    static int     IntEnv(string k, int d)   => int.TryParse(Environment.GetEnvironmentVariable(k), out var v) ? v : d;
-    static bool    BoolEnv(string k, bool d) => bool.TryParse(Environment.GetEnvironmentVariable(k), out var v) ? v : d;
+    static string Env(string k, string d) => Environment.GetEnvironmentVariable(k) ?? d;
+    static string? EnvOrNull(string k) => Environment.GetEnvironmentVariable(k);
+    static int IntEnv(string k, int d) => int.TryParse(Environment.GetEnvironmentVariable(k), out var v) ? v : d;
+    static int PositiveIntEnv(string k, int d) =>
+        int.TryParse(Environment.GetEnvironmentVariable(k), out var v) && v > 0 ? v : d;
+    static bool BoolEnv(string k, bool d) => bool.TryParse(Environment.GetEnvironmentVariable(k), out var v) ? v : d;
 }

@@ -26,8 +26,13 @@ internal sealed class InboxWatcher(
     {
         var runnerNid = await RegisterWithRetryAsync(ct);
         log.LogInformation(
-            "nps-runner ready — NID={RunnerNid}  npsd={NpsdUrl}  max_workers={MaxWorkers}  log_dir={LogDir}",
-            runnerNid, opts.NpsdUrl, opts.MaxConcurrentWorkers, opts.LogDir);
+            "nps-runner ready — NID={RunnerNid}  instance={InstanceId}  npsd={NpsdUrl}  max_workers={MaxWorkers}  state={StatePath}  log_dir={LogDir}",
+            runnerNid,
+            opts.InstanceId,
+            opts.NpsdUrl,
+            opts.MaxConcurrentWorkers,
+            opts.StatePath,
+            opts.LogDir);
 
         // long-poll waits up to PollIntervalMs; minimum 1 s to avoid tight loops.
         var waitSec = Math.Max(1, opts.PollIntervalMs / 1000);
@@ -83,34 +88,34 @@ internal sealed class InboxWatcher(
                         continue;
                     }
 
-                    // NPS-CR-0007 §4: claim the task lease before spawning so two runners never
-                    // execute the same task. The dedup key guards re-execution on reclaim (§4.3).
+                    // NPS-CR-0007 §4: atomically claim before spawning. All runner
+                    // instances configured with the same state DB coordinate here.
                     var dedupKey = LeaseStore.ComputeDedupKey(spec.TaskId, DagHashOf(spec));
 
-                    if (leases.IsNodeDone(dedupKey, spec.TaskId))
+                    var leaseSeconds = spec.MaxRuntimeSeconds ?? LeaseStore.MaxLeaseSeconds;
+                    var claim = leases.TryClaim(spec.TaskId, runnerNid, leaseSeconds, dedupKey);
+                    var disposition = RunnerClaimPolicy.DispositionFor(claim.Result);
+                    if (disposition == ClaimDisposition.AckDuplicate)
                     {
                         log.LogInformation(
-                            "Inbox message {MsgId} (task={TaskId}): already completed — acking duplicate",
+                            "Inbox message {MsgId} (task={TaskId}): durable terminal record found — acking duplicate",
                             msg.MessageId, spec.TaskId);
                         await AckSafeAsync(runnerNid, msg.MessageId, ct);
                         continue;
                     }
 
-                    var leaseSeconds = spec.MaxRuntimeSeconds ?? LeaseStore.MaxLeaseSeconds;
-                    var claim = leases.TryClaim(spec.TaskId, runnerNid, leaseSeconds, dedupKey);
-                    if (claim.Result == ClaimResult.Conflict)
+                    if (disposition == ClaimDisposition.LeaveUnacked)
                     {
                         log.LogInformation(
-                            "Inbox message {MsgId} (task={TaskId}): claimed by another runner ({Err}) — acking",
+                            "Inbox message {MsgId} (task={TaskId}): live lease held by another runner instance ({Err}) — leaving unacked",
                             msg.MessageId, spec.TaskId, claim.ErrorCode);
-                        await AckSafeAsync(runnerNid, msg.MessageId, ct);
                         continue;
                     }
 
                     if (!workers.TrySpawn(spec, runnerNid, msg.MessageId, dedupKey, ct))
                     {
-                        // Concurrency cap reached; release the lease so another runner can take it,
-                        // and leave the message unacked so it re-appears next poll.
+                        // Concurrency cap reached; release the owned lease and leave the
+                        // message unacked so it re-appears next poll.
                         leases.Release(spec.TaskId, runnerNid);
                         log.LogDebug(
                             "Inbox message {MsgId} (task={TaskId}): concurrency cap reached, will retry",

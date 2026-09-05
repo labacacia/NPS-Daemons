@@ -21,9 +21,21 @@ public sealed record NpsdOptions
     /// </summary>
     public string Host { get; init; } = "127.0.0.1";
 
+    /// <summary>Maximum time allowed to receive the native NCP preamble.</summary>
+    public int NcpPreambleTimeoutMs { get; init; } = 10_000;
+
+    /// <summary>Maximum time allowed to receive the native NCP HelloFrame.</summary>
+    public int NcpHelloTimeoutMs { get; init; } = 5_000;
+
+    /// <summary>Maximum native NCP HelloFrame payload accepted before allocation.</summary>
+    public int NcpMaxHelloPayloadBytes { get; init; } = ushort.MaxValue;
+
+    /// <summary>Whether native NCP sessions advertise and negotiate Tier-2 MsgPack.</summary>
+    public bool NcpEnableMsgPack { get; init; } = true;
+
     /// <summary>
-    /// Persistent state directory. Holds the encrypted root keypair file
-    /// and the SQLite databases for sub-NIDs and (future) inbox messages.
+    /// Persistent state directory. Holds the encrypted root keypair file and
+    /// the SQLite databases for sub-NIDs and durable inbox messages.
     /// </summary>
     public string DataDir { get; init; }
         = Path.Combine(
@@ -52,6 +64,30 @@ public sealed record NpsdOptions
     public int SubNidValidityDays { get; init; } = 7;
 
     /// <summary>
+    /// Number of days before expiry at which a sub-NID may be renewed.
+    /// The default one-day window keeps seven-day local credentials short-lived.
+    /// </summary>
+    public int SubNidRenewalWindowDays { get; init; } = 1;
+
+    /// <summary>Whether npsd emits signed NDP AnnounceFrames for managed agents.</summary>
+    public bool NdpAnnounceEnabled { get; init; } = true;
+
+    /// <summary>Base URL of the local NDP Registry.</summary>
+    public string NdpRegistryUrl { get; init; } = "http://127.0.0.1:17436";
+
+    /// <summary>Ephemeral AnnounceFrame TTL, capped by NDP at 60 seconds.</summary>
+    public int NdpAnnounceTtlSeconds { get; init; } = 60;
+
+    /// <summary>Interval between signed liveness announcements.</summary>
+    public int NdpAnnounceIntervalSeconds { get; init; } = 20;
+
+    /// <summary>
+    /// Host published in NDP addresses. Defaults to <see cref="Host"/>; operators
+    /// binding to 0.0.0.0 should set a routable hostname or address explicitly.
+    /// </summary>
+    public string? NdpAdvertiseHost { get; init; }
+
+    /// <summary>
     /// Maximum inbox depth per NID. Producers get HTTP 429 when exceeded.
     /// Default 1024; bump only after profiling memory / per-message size.
     /// </summary>
@@ -78,17 +114,39 @@ public sealed record NpsdOptions
     {
         return new NpsdOptions
         {
-            Port    = int.TryParse(Environment.GetEnvironmentVariable("NPSD_PORT"), out var p) ? p : 17433,
-            Host    = Environment.GetEnvironmentVariable("NPSD_HOST") ?? "127.0.0.1",
+            Port = int.TryParse(Environment.GetEnvironmentVariable("NPSD_PORT"), out var p) ? p : 17433,
+            Host = Environment.GetEnvironmentVariable("NPSD_HOST") ?? "127.0.0.1",
+            NcpPreambleTimeoutMs = ParsePositiveInt("NPSD_NCP_PREAMBLE_TIMEOUT_MS", 10_000),
+            NcpHelloTimeoutMs = ParsePositiveInt("NPSD_NCP_HELLO_TIMEOUT_MS", 5_000),
+            NcpMaxHelloPayloadBytes = ParsePositiveInt("NPSD_NCP_MAX_HELLO_PAYLOAD_BYTES", ushort.MaxValue),
+            NcpEnableMsgPack = ParseBool("NPSD_NCP_ENABLE_MSGPACK", true),
             DataDir = Environment.GetEnvironmentVariable("NPSD_DATA_DIR")
                       ?? Path.Combine(
                           Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                           "npsd"),
-            HostNidPrefix         = Environment.GetEnvironmentVariable("NPSD_HOST_NID_PREFIX"),
-            SubNidValidityDays    = int.TryParse(Environment.GetEnvironmentVariable("NPSD_SUB_NID_VALIDITY_DAYS"),    out var d) ? d : 7,
-            MaxInboxDepthPerNid   = int.TryParse(Environment.GetEnvironmentVariable("NPSD_MAX_INBOX_DEPTH_PER_NID"),  out var m) ? m : 1024,
-            MaxInboxMessageBytes  = int.TryParse(Environment.GetEnvironmentVariable("NPSD_MAX_INBOX_MESSAGE_BYTES"),  out var b) ? b : 64 * 1024,
-            MaxInboxWaitSeconds   = int.TryParse(Environment.GetEnvironmentVariable("NPSD_MAX_INBOX_WAIT_SECONDS"),   out var w) ? w : 30,
+            HostNidPrefix = Environment.GetEnvironmentVariable("NPSD_HOST_NID_PREFIX"),
+            SubNidValidityDays = int.TryParse(Environment.GetEnvironmentVariable("NPSD_SUB_NID_VALIDITY_DAYS"), out var d) ? d : 7,
+            SubNidRenewalWindowDays = ParsePositiveInt("NPSD_SUB_NID_RENEWAL_WINDOW_DAYS", 1),
+            NdpAnnounceEnabled = ParseBool("NPSD_NDP_ANNOUNCE_ENABLED", true),
+            NdpRegistryUrl = Environment.GetEnvironmentVariable("NPSD_NDP_REGISTRY_URL")
+                             ?? "http://127.0.0.1:17436",
+            NdpAnnounceTtlSeconds = Math.Clamp(
+                ParsePositiveInt("NPSD_NDP_ANNOUNCE_TTL_SECONDS", 60), 1, 60),
+            NdpAnnounceIntervalSeconds = ParsePositiveInt("NPSD_NDP_ANNOUNCE_INTERVAL_SECONDS", 20),
+            NdpAdvertiseHost = Environment.GetEnvironmentVariable("NPSD_NDP_ADVERTISE_HOST"),
+            MaxInboxDepthPerNid = int.TryParse(Environment.GetEnvironmentVariable("NPSD_MAX_INBOX_DEPTH_PER_NID"), out var m) ? m : 1024,
+            MaxInboxMessageBytes = int.TryParse(Environment.GetEnvironmentVariable("NPSD_MAX_INBOX_MESSAGE_BYTES"), out var b) ? b : 64 * 1024,
+            MaxInboxWaitSeconds = int.TryParse(Environment.GetEnvironmentVariable("NPSD_MAX_INBOX_WAIT_SECONDS"), out var w) ? w : 30,
         };
     }
+
+    private static int ParsePositiveInt(string name, int fallback) =>
+        int.TryParse(Environment.GetEnvironmentVariable(name), out var value) && value > 0
+            ? value
+            : fallback;
+
+    private static bool ParseBool(string name, bool fallback) =>
+        bool.TryParse(Environment.GetEnvironmentVariable(name), out var value)
+            ? value
+            : fallback;
 }

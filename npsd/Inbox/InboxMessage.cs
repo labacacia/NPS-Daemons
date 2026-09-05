@@ -8,7 +8,7 @@ namespace NPS.Daemon.Npsd.Inbox;
 /// </summary>
 public sealed record InboxMessage
 {
-    /// <summary>Server-assigned monotonic message id (per recipient NID).</summary>
+    /// <summary>Server-assigned monotonic message id from the durable inbox database.</summary>
     public required ulong MessageId { get; init; }
 
     /// <summary>Recipient sub-NID.</summary>

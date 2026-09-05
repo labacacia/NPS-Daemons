@@ -5,9 +5,18 @@
 > NPS 在生产环境的参考部署拓扑。六个常驻服务分布在三层；每一层独立水平扩展，
 > 各层有不同的信任边界和故障边界。
 >
-> 状态 —— v1.0-alpha.4：`npsd`（L1+）、`nps-registry`（SQLite 真实注册中心）、
-> `nps-ledger`（Phase 2：Merkle + STH + 包含证明）已全部可用。`nps-runner`、
-> `nps-ingress`、`nps-cloud-ca` 仍为骨架项目，随 alpha.5 → beta 逐步补全。
+> 状态 —— alpha.18 源码 / alpha.19 债务收口边界：`npsd` 已在配置的
+> loopback 端口复用 HTTP 与 local-dev 原生 NCP，具备有界 preamble/Hello
+> 协商和 Anchor ACK/缓存。其 per-NID inbox 已使用持久 SQLite，并具备跨重启
+> 的 TTL、优先级和 ack 语义。此 ephemeral L1 profile 明确拒绝 resident/hybrid
+> push，且仍不宣称完整 Node L1。
+> `nps-ingress` 已实现 native TLS 1.3 / ALPN
+> `nps/1.0` / mTLS / session-NID 绑定的 transport 边界。适用的
+> `TC-N2-Tls-01..04` family 已可执行；更宽的 admission 路线图项已明确处置，
+> 不作为 transport capability 声明。`nps-runner` 已实现 inbox 调度、portable
+> OCI SpawnSpec 解析/执行、有界 worker 生命周期，以及带跨进程 claim、重启/回收、
+> 终态去重与旧属主围栏证据的持久化 SQLite 租约。完整 TaskFrame DAG/Saga L3
+> 认证仍不作声明；逐 case manifest 记录其准确边界。其他 daemon 的收口工作单独跟踪。
 
 ---
 
@@ -29,7 +38,7 @@
 │ │ ③ nps-ingress    │                  │ ④ nps-registry   │           │
 │ │ Internet 入站    │                  │ 跨机 NDP         │           │
 │ │ NPS-over-TLS     │                  │ resolve+graph    │           │
-│ │ 限速 + CGN 扣款 │                  │ （L2 阶段）      │           │
+│ │ TLS + NID 绑定  │                  │ （L2 阶段）      │           │
 │ └────────┬─────────┘                  └────────┬─────────┘           │
 └──────────┼─────────────────────────────────────┼─────────────────────┘
            ▼                                     ▼
@@ -52,15 +61,28 @@
 
 #### ① `npsd` —— 协议接入与状态宿主
 
-- **监听** `127.0.0.1:17433`（NPS 协议族统一端口）。
-- **处理** NCP 握手（含 [NPS-RFC-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.cn.md) 连接前导）、帧编解码、AnnounceFrame 发布、root Ed25519 密钥对管理、为本机 agent 签发 sub-NID、本机 session 注册表、按 NID 维护 inbox 队列（`ephemeral` 激活模式投递）。
+- **监听**：默认 `127.0.0.1:17433`，在统一端口无损复用 HTTP 控制流量与 local-dev 原生 NCP。
+- **已实现原生边界**：有界 [NPS-RFC-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.cn.md) preamble 与 Hello/Caps 协商、协商后的编码/payload 约束、canonical AnchorFrame ACK/缓存，以及确定性的静默/错误关闭。公网 TLS 1.3/mTLS 终止属于 `nps-ingress`。
+- **已实现状态边界**：root Ed25519 密钥对管理、为本机 agent 签发 sub-NID，以及用于 `ephemeral` HTTP pull + 显式 ack 的持久 per-NID SQLite inbox。未投递帧、绝对 TTL、优先级顺序和 ack 均跨 daemon 重启保留。
+- **明确限制**：不宣称完整 Node L1。精确 NCP/NDP/NWP 证据和缺口见 [`NPS-NODE-L1-MANIFEST.json`](../npsd/conformance/NPS-NODE-L1-MANIFEST.json)。resident/hybrid push 在 L1 可选，本 profile 明确拒绝；BYO-key agent 不会自动广播，因为 npsd 不持有其私钥，也不得冒充 publisher 签名。
 - **为什么必须常驻**：身份和 inbox 不能跟着 session 走 —— 持久状态需要宿主进程。本机所有 NPS 客户端（MCP shim、resident agent、worker、ingress shim）都通过它接入。
 - **为什么不能合并**：协议层是业务无关的，所有上层共享；合并到任何业务进程都会污染信任域。
 - **参考合规**：目标是 `NPS-Node Profile L1`（见 [`spec/services/NPS-Node-Profile.cn.md`](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) 与 [`spec/services/conformance/NPS-Node-L1.cn.md`](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md)）。
 
 #### ② `nps-runner` —— 任务调度器 / FaaS runtime *(L3 阶段)*
 
-- **监控** inbox 中给 `ephemeral` 模式 NIDs 的消息，根据 NID 的 `spawn_spec_ref`（NDP §3.1）拉起对应 worker 子进程，管理生命周期（超时、并发上限、重试、结果回收）。
+- **已实现的 runtime 边界**：向本机 `npsd` 自注册并轮询 inbox；校验 inline
+  或引用形式的 portable OCI SpawnSpec；执行 OCI 容器（保留旧版直接子进程兼容
+  路径）；限制并发、空闲与最大运行时间；捕获日志并报告完成结果。
+- **已实现的 ownership 行为**：在多个协调 runner 进程共享的持久化 SQLite
+  文件中原子 claim 并周期续租。每次启动生成新的 instance identity 以围栏旧
+  进程；终态记录跨重启保留；租约丢失时取消 worker，且不写终态、不 ack
+  inbox、不发送通知。
+- **明确限制**：当前 inbox 契约执行单个 SpawnSpec，而不是多节点 TaskFrame，
+  因此不声明完整 Node L3 认证。已验证/部分验证/未执行的逐 case 边界见
+  [`NPS-NODE-L3-MANIFEST.json`](../nps-runner/conformance/NPS-NODE-L3-MANIFEST.json)，
+  更完整能力边界见
+  [`NPS-RUNNER-CAPABILITIES.json`](../nps-runner/conformance/NPS-RUNNER-CAPABILITIES.json)。
 - **为什么必须常驻**：消息随时到达；调度器必须在那才能 spawn。worker 是临时的，但调度器不是。
 - **为什么与 `npsd` 分离**：资源画像差异巨大 —— `npsd` 静态、内存可预测；`nps-runner` 在 spawn 高峰时 burst；故障隔离很关键（worker crash 不该把 NCP 层带下去）；信任边界不同（`nps-runner` 跑用户提供的 Agent SDK 代码，协议层不该有这个权限面）。
 
@@ -68,7 +90,8 @@
 
 #### ③ `nps-ingress` —— Internet 入站网关
 
-- **翻译** Internet 上来的 NPS-over-TLS 流量为本机协议帧。处理 TLS termination、限速、NeuronHub 用户鉴权、CGN 扣款触发、声誉检查（基于 [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.cn.md)）、DDoS 防护。
+- **已实现的 transport 边界**：以 TLS 1.3 + ALPN `nps/1.0` 终止 native NCP；默认开启的 mTLS 把 NIP 客户端证书验证到配置信任锚；Caps 后的 `IdentFrame` NID 在转发前绑定到证书 NID；握手时间/frame 大小和后端准入前 framing 均有硬边界；通过的字节流代理到本机 NCP 后端，并在客户端 half-close 后排空响应。`TC-N2-Tls-01..04` 已通过真实 socket 执行。
+- **边界处置**：拓扑、Bridge、HA 与 Registry family 适用于其他 IUT 角色。限速、NeuronHub 用户鉴权、CGN 扣款、声誉、Anchor 中间件及广义 DDoS 控制不作为 transport capability 宣传；其产品/AaaS/可选组合/部署归属记录在 [`NPS-INGRESS-ADMISSION-DISPOSITION.json`](../nps-ingress/conformance/NPS-INGRESS-ADMISSION-DISPOSITION.json)。
 - **为什么必须常驻**：对外暴露的端口必须始终在听。
 - **为什么与 `npsd` 分离**：`npsd` 默认只 bind 127.0.0.1；网关 bind 公网。攻击面、安全策略、运维边界完全不同。`npsd` 失败影响本机所有 NPS 流量；网关失败只影响外部入站 —— 二者必须能独立重启。
 - **说明**：这是**进程级**名字；规范层"集群控制平面"角色现在叫 **Anchor Node**（NWP），见 [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md)。`nps-ingress` 进程 MAY 承载 Anchor Node 中间件，但不是必须。
@@ -107,7 +130,10 @@
 | ⑤ | `tools/daemons/nps-cloud-ca/` | `NpsCloudCa.csproj` | `nps-cloud-ca` | `LabAcacia.NPS.Daemon.CloudCa` |
 | ⑥ | `tools/daemons/nps-ledger/` | `NpsLedger.csproj` | `nps-ledger` | `LabAcacia.NPS.Daemon.Ledger` |
 
-## alpha + beta 阶段化
+## 历史 alpha-to-beta 阶段规划
+
+下表保留 alpha.4 时的规划快照，不是当前 capability matrix。当前
+`nps-ingress` 与 `nps-runner` 的行为和缺口以上文及 daemon README 为准。
 
 | Daemon | alpha.3 | alpha.4（本次） | alpha.11+ | beta / 1.0 |
 |--------|---------|----------------|----------|------------|

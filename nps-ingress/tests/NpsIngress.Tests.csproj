@@ -20,4 +20,15 @@
     <ProjectReference Include="..\NpsIngress.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\conformance\NPS-NODE-L2-TLS-EVIDENCE.json">
+      <Link>conformance\NPS-NODE-L2-TLS-EVIDENCE.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\conformance\NPS-INGRESS-ADMISSION-DISPOSITION.json">
+      <Link>conformance\NPS-INGRESS-ADMISSION-DISPOSITION.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

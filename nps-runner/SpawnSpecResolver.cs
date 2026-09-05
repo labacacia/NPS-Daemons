@@ -30,7 +30,7 @@ internal sealed class SpawnSpecResolver
     {
     }
 
-    internal SpawnSpecResolver(
+    public SpawnSpecResolver(
         HttpClient registryHttp,
         SpawnSpecRemoteClient remoteHttp,
         RunnerOptions options)

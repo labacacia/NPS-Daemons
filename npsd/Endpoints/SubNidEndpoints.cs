@@ -8,7 +8,7 @@ using NPS.NIP.Ca;
 namespace NPS.Daemon.Npsd.Endpoints;
 
 /// <summary>
-/// Sub-NID issuance endpoints — POST/GET/REVOKE/LIST.
+/// Sub-NID issuance endpoints — POST/GET/RENEW/REVOKE/LIST.
 /// </summary>
 /// <remarks>
 /// Clients URL-encode the NID in path segments. ASP.NET Core decodes
@@ -116,6 +116,42 @@ public static class SubNidEndpoints
             }, s_jsonOpts);
         });
 
+        // POST /v1/agents/{nid}/renew — replace an eligible short-lived credential.
+        app.MapPost("/v1/agents/{nid}/renew", (string nid, SubNidService svc) =>
+        {
+            try
+            {
+                return Results.Json(
+                    new RenewResponse(svc.Renew(nid)),
+                    s_jsonOpts,
+                    statusCode: 200);
+            }
+            catch (SubNidRenewalException ex)
+            {
+                var statusCode = ex.ErrorCode switch
+                {
+                    NipErrorCodes.NidNotFound => 404,
+                    NipErrorCodes.RenewalTooEarly => 400,
+                    NipErrorCodes.CertRevoked or NipErrorCodes.CertExpired => 401,
+                    _ => 409,
+                };
+                var status = statusCode switch
+                {
+                    404 => "NPS-CLIENT-NOT-FOUND",
+                    401 => "NPS-AUTH-UNAUTHENTICATED",
+                    400 => "NPS-CLIENT-BAD-FRAME",
+                    _ => "NPS-CLIENT-CONFLICT",
+                };
+                return Results.Json(new
+                {
+                    error = ex.ErrorCode,
+                    status,
+                    message = ex.Message,
+                    nid = ex.Nid,
+                }, s_jsonOpts, statusCode: statusCode);
+            }
+        });
+
         // POST /v1/agents/{nid}/revoke
         app.MapPost("/v1/agents/{nid}/revoke", async (string nid, HttpContext ctx, SubNidService svc) =>
         {
@@ -161,6 +197,8 @@ public static class SubNidEndpoints
     public sealed record IssueResponse(
         NPS.NIP.Frames.IdentFrame Frame,
         string?                   MintedPrivateKey);
+
+    public sealed record RenewResponse(NPS.NIP.Frames.IdentFrame Frame);
 
     public sealed record RevokeRequest(string? Reason);
 

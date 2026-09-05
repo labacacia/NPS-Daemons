@@ -14,6 +14,9 @@ COPY *.cs           ./
 COPY SubNids/       ./SubNids/
 COPY Inbox/         ./Inbox/
 COPY Endpoints/     ./Endpoints/
+COPY Native/        ./Native/
+COPY Observability/ ./Observability/
+COPY conformance/   ./conformance/
 
 RUN dotnet publish Npsd.csproj -c Release -o /app/publish --no-restore
 
@@ -21,16 +24,13 @@ RUN dotnet publish Npsd.csproj -c Release -o /app/publish --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-RUN groupadd --gid 1000 npsd \
- && useradd --uid 1000 --gid 1000 --no-create-home --shell /usr/sbin/nologin npsd
-
-# Persistent state (root keypair + future inbox storage).
-RUN mkdir -p /data && chown npsd:npsd /data
+# Persistent state (root keypair + sub-NID and inbox SQLite databases).
+RUN mkdir -p /data && chown app:app /data
 
 COPY --from=build /app/publish .
-RUN chown -R npsd:npsd /app
+RUN chown -R app:app /app
 
-USER npsd
+USER app
 
 # NPS unified port (NPS-1 §2.3).
 EXPOSE 17433
@@ -42,6 +42,6 @@ ENV NPSD_DATA_DIR=/data
 ENV ASPNETCORE_URLS=http://0.0.0.0:17433
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q -O - http://localhost:17433/health > /dev/null || exit 1
+  CMD ["/app/npsd", "--healthcheck"]
 
 ENTRYPOINT ["/app/npsd"]

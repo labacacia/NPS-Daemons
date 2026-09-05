@@ -12,6 +12,13 @@ internal sealed record RunnerOptions
     public string AgentId { get; init; } = "nps-runner";
     public string OciRuntime { get; init; } = "docker";
     public string RegistryUrl { get; init; } = "http://127.0.0.1:17436";
+    public string StatePath { get; init; } = DefaultStatePath();
+
+    /// <summary>
+    /// Process-lifetime fencing identity. A fresh value on every start prevents a
+    /// restarted process from inheriting an unexpired lease solely because its NID is stable.
+    /// </summary>
+    public string InstanceId { get; init; } = Guid.NewGuid().ToString("N");
 
     public static RunnerOptions FromEnvironment() => new()
     {
@@ -22,9 +29,14 @@ internal sealed record RunnerOptions
         AgentId = Env("NPS_RUNNER_AGENT_ID", "nps-runner"),
         OciRuntime = Env("NPS_RUNNER_OCI_RUNTIME", "docker"),
         RegistryUrl = Env("NPS_REGISTRY_URL", "http://127.0.0.1:17436"),
+        StatePath = Env("NPS_RUNNER_STATE_PATH", DefaultStatePath()),
+        InstanceId = Guid.NewGuid().ToString("N"),
     };
 
     static string Env(string key, string def) => System.Environment.GetEnvironmentVariable(key) ?? def;
     static int IntEnv(string key, int def) =>
         int.TryParse(System.Environment.GetEnvironmentVariable(key), out var v) ? v : def;
+
+    private static string DefaultStatePath() =>
+        Path.Combine(Path.GetTempPath(), "nps-runner-state", "leases.db");
 }

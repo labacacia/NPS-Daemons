@@ -62,8 +62,10 @@ public sealed class PortableRuntimeConformanceTests
     {
         var origin = DateTimeOffset.UnixEpoch;
         var now = origin;
-        var store = new LeaseStore(() => now);
+        using var store = LeaseStore.CreateInMemoryForTests(() => now);
         var outcomes = new List<string>();
+        string? activeTaskId = null;
+        string? activeRunnerNid = null;
         foreach (var item in input.GetProperty("events").EnumerateArray())
         {
             now = origin.AddSeconds(item.GetProperty("at").GetInt32());
@@ -71,9 +73,11 @@ public sealed class PortableRuntimeConformanceTests
             switch (operation)
             {
                 case "claim":
+                    activeTaskId = item.GetProperty("task_id").GetString()!;
+                    activeRunnerNid = item.GetProperty("runner_nid").GetString()!;
                     var claim = store.TryClaim(
-                        item.GetProperty("task_id").GetString()!,
-                        item.GetProperty("runner_nid").GetString()!,
+                        activeTaskId,
+                        activeRunnerNid,
                         item.GetProperty("lease_seconds").GetInt32(),
                         item.GetProperty("dedup_key").GetString()!);
                     outcomes.Add(claim.Result switch
@@ -93,9 +97,13 @@ public sealed class PortableRuntimeConformanceTests
                         : "conflict");
                     break;
                 case "mark_terminal":
-                    store.MarkNodeDone(
+                    Assert.NotNull(activeTaskId);
+                    Assert.NotNull(activeRunnerNid);
+                    Assert.True(store.TryRecordTerminal(
+                        activeTaskId,
+                        activeRunnerNid,
                         item.GetProperty("dedup_key").GetString()!,
-                        item.GetProperty("node_id").GetString()!);
+                        item.GetProperty("node_id").GetString()!));
                     outcomes.Add("recorded");
                     break;
                 case "is_terminal":

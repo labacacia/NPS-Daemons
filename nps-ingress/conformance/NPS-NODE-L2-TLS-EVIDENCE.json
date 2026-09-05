@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "profile": "NPS-Node-L2",
+  "profile_version": "0.6",
+  "claim_scope": [
+    "NPS-RFC-0006",
+    "TC-N2-Tls"
+  ],
+  "evidence_status": "executable",
+  "iut": {
+    "name": "nps-ingress",
+    "version": "1.0.0-alpha.18"
+  },
+  "peer": {
+    "name": "OpenSSL s_client with disposable Ed25519 NIP test PKI",
+    "version": ">= 3.0"
+  },
+  "run": {
+    "command": "dotnet test tools/daemons/nps-ingress/tests/NpsIngress.Tests.csproj -c Release --filter FullyQualifiedName~IngressTlsConformanceTests",
+    "environment": "linux-x64; .NET 10; OpenSSL >= 3.0"
+  },
+  "applicability": {
+    "TC-N2-AnchorTopo/AnchorStream": "not-applicable: nps-ingress is a transport terminator, not an Anchor topology IUT",
+    "TC-N2-BridgeIn": "not-applicable: nps-ingress declares no inbound Bridge protocol",
+    "TC-N2-HA-01..06/09": "not-applicable: nps-ingress is not an Anchor ownership IUT",
+    "TC-N2-HA-07..08": "not-applicable: nps-ingress is not an NDP Registry IUT"
+  },
+  "cases": [
+    {
+      "id": "TC-N2-Tls-01",
+      "result": "pass",
+      "evidence": "TC_N2_Tls_01_negotiates_only_nps_alpn_over_tls13"
+    },
+    {
+      "id": "TC-N2-Tls-02",
+      "result": "pass",
+      "evidence": "TC_N2_Tls_02_requires_a_client_certificate"
+    },
+    {
+      "id": "TC-N2-Tls-03",
+      "result": "pass",
+      "evidence": "TC_N2_Tls_03_validates_nip_chain_binds_nid_and_replays_prefix"
+    },
+    {
+      "id": "TC-N2-Tls-04",
+      "result": "pass",
+      "evidence": "TC_N2_Tls_04_returns_nid_mismatch_and_never_forwards_ident"
+    }
+  ],
+  "summary": {
+    "pass": 4,
+    "fail": 0,
+    "skip": 0,
+    "na": 0
+  },
+  "limitations": [
+    "This evidence certifies only the all-or-nothing TC-N2-Tls family.",
+    "It is not a signed NPS-Node-L2 self-attestation and does not claim L2-08 topology, Bridge, HA, Registry, rate-limit, authentication, CGN, reputation, Anchor middleware, or DDoS admission behavior."
+  ]
+}

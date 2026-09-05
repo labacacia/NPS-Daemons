@@ -8,6 +8,18 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+- Reconcile the standalone bundle with the alpha.19 debt-closure source tree:
+  durable npsd inbox/renewal/signed NDP presence, runner lease fencing,
+  ingress native TLS admission, and the real SQLite/federated registry surface.
+- Wire the compose services to each other explicitly and persist runner lease state.
+- Replace ingress/registry `wget` health probes with built-in binary probes, repair
+  materialized architecture links, and use the canonical LabAcacia Cloud CA/Ledger
+  repository names. No version bump or release publication is part of this entry.
+
 ## [1.0.0-alpha.18] — 2026-08-15
 
 ### Changed

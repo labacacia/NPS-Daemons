@@ -19,12 +19,12 @@ layers of the standard NPS deployment topology.
 
 ## What's in this repo
 
-| Layer | Daemon | Default port | Status at `v1.0.0-alpha.18` |
+| Layer | Daemon | Default port | Alpha.19 debt-closure candidate |
 |-------|--------|--------------|----------------------------|
-| 1 | [`npsd`](./npsd/) | `127.0.0.1:17433` | L1 minimum: HTTP listener, root keypair generation (POSIX `0600`), `/.nwm`, `/health`. |
-| 1 | [`nps-runner`](./nps-runner/) | — (worker) | Phase 1 skeleton — Generic Host scaffolding + 30 s heartbeat. Inbox watcher + spawn-spec resolver land alpha.11+. |
-| 2 | [`nps-ingress`](./nps-ingress/) | `:8080` | Phase 1 skeleton — public HTTP listener + `/health`. TLS termination + rate limit + auth + CGN debit + reputation lookup land alpha.4 → alpha.5. |
-| 2 | [`nps-registry`](./nps-registry/) | `:17436` | Phase 1 skeleton — NDP `Resolve` / `Graph` / `Announce` URLs return `NDP-REGISTRY-UNAVAILABLE` so consumers can wire and gracefully fall back. SQLite-backed real registry lands alpha.4. |
+| 1 | [`npsd`](./npsd/) | `127.0.0.1:17433` | Host root/sub-NIDs, bounded native NCP, durable per-NID inbox, sub-NID renewal, and signed ephemeral NDP presence. Full L1 is not claimed. |
+| 1 | [`nps-runner`](./nps-runner/) | — (worker) | Inbox-driven portable OCI/legacy execution with bounded lifecycle, durable SQLite leases, renewal, stale-owner fencing, and terminal deduplication. Full TaskFrame DAG/Saga L3 is not claimed. |
+| 2 | [`nps-ingress`](./nps-ingress/) | `:8080` health, `:17443` native | TLS 1.3 + ALPN `nps/1.0`, default-on mTLS, session-NID binding, bounded admission, and local NCP proxy. Product/AaaS controls are explicitly out of scope. |
+| 2 | [`nps-registry`](./nps-registry/) | `:17436` | SQLite-backed Announce/Resolve/Graph, TTL expiry, monotonic graph sequence, multi-Anchor epoch handling, and bounded federation-loop handling. |
 
 Each daemon lives in its own subdirectory with its own
 `Dockerfile` / `docker-compose.yml` / README — they share a release
@@ -32,12 +32,11 @@ cadence and a base image but build and ship independently.
 
 ### What is NOT in this repo
 
-The **trust-anchor / cloud** layer of NPS lives in two private repos
-under the `innolotus` GitHub organisation, available with NPS Cloud
-when it ships (2027 Q1+):
+The **trust-anchor / cloud** daemons are maintained in separate LabAcacia
+repositories and are intentionally not materialized into this four-daemon bundle:
 
-- `labacacia/NPS-Cloud-CA` — cross-organisation NID Certificate Authority + CRL/OCSP.
-- `labacacia/NPS-Ledger` — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
+- [`labacacia/NPS-Cloud-CA`](https://github.com/labacacia/NPS-Cloud-CA) — cross-organisation NID Certificate Authority + CRL/OCSP.
+- [`labacacia/NPS-Ledger`](https://github.com/labacacia/NPS-Ledger) — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
 
 For self-host CA needs **today**, use [`labacacia/NIP-CA-Server`](https://github.com/labacacia/NIP-CA-Server)
 — the OSS single-organisation CA — instead.
@@ -174,13 +173,13 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 ## Architecture
 
-The full three-layer reference topology, including the two private
+The full three-layer reference topology, including the two separately maintained
 trust-anchor daemons, is in [`docs/architecture.md`](./docs/architecture.md).
 Short version:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Layer 3 (private — innolotus org, NPS Cloud 2027 Q1+)   │
+│ Layer 3 (separate LabAcacia repositories)               │
 │   nps-cloud-ca · nps-ledger                             │
 ├─────────────────────────────────────────────────────────┤
 │ Layer 2 (this repo) — network entry                     │

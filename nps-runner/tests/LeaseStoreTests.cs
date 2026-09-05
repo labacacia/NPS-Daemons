@@ -6,108 +6,173 @@ using Xunit;
 
 namespace NPS.Daemon.Runner.Tests;
 
-/// <summary>Tests for the NPS-CR-0007 §4 task-claim lease protocol.</summary>
+/// <summary>Tests for the durable NPS-CR-0007 §4 task-claim protocol.</summary>
 public sealed class LeaseStoreTests
 {
-    private const string Task = "task-1";
+    private const string TaskId = "task-1";
     private const string Dedup = "dedup-abc";
 
     [Fact]
-    public void Concurrent_claim_grants_one_and_conflicts_the_other()
+    public async Task Concurrent_claim_across_file_backed_runner_instances_grants_exactly_one()
     {
-        var store = new LeaseStore();
-        var first = store.TryClaim(Task, "runner-A", 60, Dedup);
-        var second = store.TryClaim(Task, "runner-B", 60, Dedup);
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            $"nps-runner-concurrent-{Guid.NewGuid():N}");
+        var statePath = Path.Combine(root, "leases.db");
+        try
+        {
+            using var first = new LeaseStore(statePath, "instance-A");
+            using var second = new LeaseStore(statePath, "instance-B");
+            using var start = new ManualResetEventSlim(false);
 
-        Assert.Equal(ClaimResult.Granted, first.Result);
-        Assert.Equal(ClaimResult.Conflict, second.Result);
-        Assert.Equal("NOP-CLAIM-CONFLICT", second.ErrorCode);
+            var firstClaim = Task.Run(() =>
+            {
+                start.Wait();
+                return first.TryClaim(TaskId, "runner", 60, Dedup);
+            });
+            var secondClaim = Task.Run(() =>
+            {
+                start.Wait();
+                return second.TryClaim(TaskId, "runner", 60, Dedup);
+            });
+            start.Set();
+
+            var claims = await Task.WhenAll(firstClaim, secondClaim);
+
+            Assert.Single(claims, claim => claim.Result == ClaimResult.Granted);
+            var conflict = Assert.Single(claims, claim => claim.Result == ClaimResult.Conflict);
+            Assert.Equal(LeaseStore.ClaimConflictCode, conflict.ErrorCode);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]
-    public void Owning_runner_reclaim_renews_not_conflicts()
+    public void Same_owner_claim_renews_without_conflict()
     {
-        var store = new LeaseStore();
-        store.TryClaim(Task, "runner-A", 60, Dedup);
-        var again = store.TryClaim(Task, "runner-A", 60, Dedup);
-        Assert.Equal(ClaimResult.Granted, again.Result);
+        using var store = LeaseStore.CreateInMemoryForTests(ownerInstanceId: "instance-A");
+        store.TryClaim(TaskId, "runner-A", 60, Dedup);
+
+        Assert.Equal(
+            ClaimResult.Granted,
+            store.TryClaim(TaskId, "runner-A", 60, Dedup).Result);
     }
 
     [Fact]
-    public void Expired_lease_cannot_be_renewed_by_the_former_owner()
+    public void Expired_lease_is_reclaimable_but_stale_owner_cannot_renew_or_complete()
     {
-        var now = DateTimeOffset.UtcNow;
-        var store = new LeaseStore(() => now);
-        store.TryClaim(Task, "runner-A", 10, Dedup);
+        var now = DateTimeOffset.UnixEpoch;
+        var database = $"lease-reclaim-{Guid.NewGuid():N}";
+        using var stale = LeaseStore.CreateSharedInMemoryForTests(
+            database,
+            "instance-A",
+            () => now);
+        using var replacement = LeaseStore.CreateSharedInMemoryForTests(
+            database,
+            "instance-B",
+            () => now);
+        stale.TryClaim(TaskId, "runner", 10, Dedup);
 
         now = now.AddSeconds(10);
 
-        Assert.False(store.Renew(Task, "runner-A", 10));
         Assert.Equal(
             ClaimResult.Reclaimed,
-            store.TryClaim(Task, "runner-B", 10, Dedup).Result);
+            replacement.TryClaim(TaskId, "runner", 10, Dedup).Result);
+        Assert.False(stale.Renew(TaskId, "runner", 10));
+        Assert.False(stale.TryCompleteTask(TaskId, "runner", Dedup));
+        Assert.False(stale.IsNodeDone(Dedup, TaskId));
     }
 
     [Fact]
-    public void Expired_lease_is_reclaimable_by_another_runner()
+    public void Lease_seconds_are_clamped_to_minimum()
     {
-        var now = DateTimeOffset.UtcNow;
-        var store = new LeaseStore(() => now);
-        store.TryClaim(Task, "runner-A", 10, Dedup);   // min lease = 10s
+        var now = DateTimeOffset.UnixEpoch;
+        var database = $"lease-clamp-{Guid.NewGuid():N}";
+        using var first = LeaseStore.CreateSharedInMemoryForTests(
+            database,
+            "instance-A",
+            () => now);
+        using var second = LeaseStore.CreateSharedInMemoryForTests(
+            database,
+            "instance-B",
+            () => now);
+        first.TryClaim(TaskId, "runner", 5, Dedup);
 
-        now = now.AddSeconds(11);                       // lease expired
-        var reclaim = store.TryClaim(Task, "runner-B", 60, Dedup);
-        Assert.Equal(ClaimResult.Reclaimed, reclaim.Result);
+        now = now.AddSeconds(9);
+
+        Assert.Equal(
+            ClaimResult.Conflict,
+            second.TryClaim(TaskId, "runner", 60, Dedup).Result);
     }
 
     [Fact]
-    public void Lease_seconds_are_clamped_to_bounds()
+    public void Terminal_node_dedup_survives_store_reopen_and_reclaim()
     {
-        var now = DateTimeOffset.UtcNow;
-        var store = new LeaseStore(() => now);
-        store.TryClaim(Task, "runner-A", 5, Dedup);     // below min(10) → clamped to 10
+        var statePath = Path.Combine(
+            Path.GetTempPath(),
+            $"nps-runner-lease-{Guid.NewGuid():N}.db");
+        var now = DateTimeOffset.UnixEpoch;
+        try
+        {
+            using (var first = new LeaseStore(statePath, "instance-A", () => now))
+            {
+                first.TryClaim(TaskId, "runner", 10, Dedup);
+                Assert.True(first.TryRecordTerminal(TaskId, "runner", Dedup, "node-1"));
+            }
 
-        now = now.AddSeconds(9);                         // still within the clamped 10s lease
-        Assert.Equal(ClaimResult.Conflict, store.TryClaim(Task, "runner-B", 60, Dedup).Result);
+            now = now.AddSeconds(11);
+            using var restarted = new LeaseStore(statePath, "instance-B", () => now);
+            Assert.Equal(
+                ClaimResult.Reclaimed,
+                restarted.TryClaim(TaskId, "runner", 10, Dedup).Result);
+            Assert.True(restarted.IsNodeDone(Dedup, "node-1"));
+        }
+        finally
+        {
+            File.Delete(statePath);
+        }
     }
 
     [Fact]
-    public void Terminal_node_dedup_prevents_reexecution_on_reclaim()
+    public void Atomic_completion_persists_terminal_and_suppresses_redelivery()
     {
-        var store = new LeaseStore();
-        Assert.False(store.IsNodeDone(Dedup, "node-1"));
-        store.MarkNodeDone(Dedup, "node-1");
-        Assert.True(store.IsNodeDone(Dedup, "node-1"));
-        // A different dedup key (different task/dag) is a distinct unit of work.
-        Assert.False(store.IsNodeDone("other-dedup", "node-1"));
-    }
+        var database = $"lease-complete-{Guid.NewGuid():N}";
+        using var owner = LeaseStore.CreateSharedInMemoryForTests(database, "instance-A");
+        using var redelivery = LeaseStore.CreateSharedInMemoryForTests(database, "instance-B");
+        owner.TryClaim(TaskId, "runner", 60, Dedup);
 
-    [Fact]
-    public void Release_frees_the_lease_for_another_runner()
-    {
-        var store = new LeaseStore();
-        store.TryClaim(Task, "runner-A", 60, Dedup);
-        store.Release(Task, "runner-A");
-        Assert.Equal(ClaimResult.Granted, store.TryClaim(Task, "runner-B", 60, Dedup).Result);
+        Assert.True(owner.TryCompleteTask(TaskId, "runner", Dedup));
+        Assert.True(owner.IsNodeDone(Dedup, TaskId));
+        Assert.Equal(
+            ClaimResult.AlreadyCompleted,
+            redelivery.TryClaim(TaskId, "runner", 60, Dedup).Result);
     }
 
     [Fact]
     public void Release_by_non_owner_is_ignored()
     {
-        var store = new LeaseStore();
-        store.TryClaim(Task, "runner-A", 60, Dedup);
-        store.Release(Task, "runner-B");                 // not the owner — no-op
-        Assert.Equal(ClaimResult.Conflict, store.TryClaim(Task, "runner-B", 60, Dedup).Result);
+        var database = $"lease-release-{Guid.NewGuid():N}";
+        using var owner = LeaseStore.CreateSharedInMemoryForTests(database, "instance-A");
+        using var other = LeaseStore.CreateSharedInMemoryForTests(database, "instance-B");
+        owner.TryClaim(TaskId, "runner", 60, Dedup);
+
+        Assert.False(other.Release(TaskId, "runner"));
+        Assert.Equal(
+            ClaimResult.Conflict,
+            other.TryClaim(TaskId, "runner", 60, Dedup).Result);
     }
 
     [Fact]
-    public void DedupKey_is_deterministic_and_distinct_per_input()
+    public void Dedup_key_is_deterministic_and_distinct_per_input()
     {
-        var k1 = LeaseStore.ComputeDedupKey("task-1", "dagA");
-        var k2 = LeaseStore.ComputeDedupKey("task-1", "dagA");
-        var k3 = LeaseStore.ComputeDedupKey("task-1", "dagB");
-        Assert.Equal(k1, k2);
-        Assert.NotEqual(k1, k3);
-        Assert.Equal(64, k1.Length); // sha256 hex
+        var first = LeaseStore.ComputeDedupKey("task-1", "dagA");
+        var duplicate = LeaseStore.ComputeDedupKey("task-1", "dagA");
+        var different = LeaseStore.ComputeDedupKey("task-1", "dagB");
+        Assert.Equal(first, duplicate);
+        Assert.NotEqual(first, different);
+        Assert.Equal(64, first.Length);
     }
 }
