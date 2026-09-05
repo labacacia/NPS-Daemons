@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — alpha.19 debt closure
+## [1.0.0-alpha.19] — 2026-09-05
 
 ### Changed
 
@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   client certificate, and emit a structured `ErrorFrame` before closing NID-mismatched sessions.
 - Published a role-scoped evidence manifest without claiming the topology, Bridge, HA, Registry,
   admission-control, or full NPS-Node-L2 families.
+- Normalized that artifact as a runnable, scope-complete four-case family manifest and registered
+  it without converting role-inapplicable families into fake partial `na` results.
 - Fixed the normal interactive native handshake path: ingress now relays backend Caps before
   waiting for the post-Caps IdentFrame, then validates the certificate NID before forwarding that
   Ident. Invalid preambles, non-Hello first frames, oversized frames, and slow incomplete

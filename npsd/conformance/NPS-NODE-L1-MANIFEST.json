@@ -2,18 +2,25 @@
   "artifact": "NPS-NODE-L1-IMPLEMENTATION-MANIFEST",
   "version": 1,
   "implementation": "npsd",
+  "profile": "NPS-Node-L1",
+  "profile_version": "0.1",
   "candidate_work": "1.0.0-alpha.19-debt-closure",
   "suite": "spec/services/conformance/NPS-Node-L1.md@0.1",
   "certification_claim": "not_claimed",
   "deployment_scope": "local-dev plaintext TCP and HTTP multiplexed on one configured endpoint; default loopback, non-loopback only in an operator-isolated network",
+  "run": {
+    "commands": [
+      "dotnet test impl/dotnet/tests/NPS.Tests/NPS.Tests.csproj -c Release --filter \"FullyQualifiedName~Daemons.Npsd|FullyQualifiedName~NpsdNodeL1ManifestTests\"",
+      "dotnet test impl/dotnet/NPS.sln -c Release -p:TreatWarningsAsErrors=true"
+    ],
+    "environment": "linux-x64; .NET 10; disposable data directories and loopback sockets"
+  },
   "summary": {
-    "ncp_verified": 2,
-    "ncp_partial": 2,
-    "ndp_verified": 2,
-    "nwp_verified": 3,
-    "nwp_unexecuted": 1,
-    "nwp_not_applicable": 1,
-    "full_l1_cases": 21,
+    "verified": 8,
+    "partial": 6,
+    "unexecuted": 5,
+    "not_applicable": 1,
+    "total_cases": 20,
     "all_cases_required_for_certification": true
   },
   "cases": {
@@ -47,6 +54,36 @@
         "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#JsonOnlyServer_RejectsTier2OnlyHelloWithoutFallback"
       ]
     },
+    "TC-N1-NIP-01": {
+      "status": "partial",
+      "evidence": [
+        "tools/daemons/npsd/RootIdentity.cs",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Liveness_sequence_and_managed_key_survive_restart"
+      ],
+      "gap": "Root and managed signing keys survive restart, but the suite's exact root-key cardinality and POSIX 0600 or Windows owner-only ACL fixture has not run."
+    },
+    "TC-N1-NIP-02": {
+      "status": "partial",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Nip/NipIdentVerifierTests.cs",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/SubNidIssuanceTests.cs"
+      ],
+      "gap": "Ident signing and verification primitives execute, but npsd's native listener does not yet perform the suite's complete bidirectional peer Ident exchange."
+    },
+    "TC-N1-NIP-03": {
+      "status": "partial",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/SubNidIssuanceTests.cs",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs"
+      ],
+      "gap": "Hosted-agent NIDs and restart continuity execute, but the suite's advertised root node NID process fixture is not case-complete."
+    },
+    "TC-N1-NIP-04": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/SubNidIssuanceTests.cs"
+      ]
+    },
     "TC-N1-NDP-01": {
       "status": "verified",
       "evidence": [
@@ -64,6 +101,18 @@
         "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Liveness_sequence_and_managed_key_survive_restart"
       ],
       "note": "Portable NDP canonical verification succeeds under the IdentFrame public key and fails after signed capability data is tampered. BYO-key agents are excluded rather than signed by the host root."
+    },
+    "TC-N1-NDP-03": {
+      "status": "partial",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Signed_announce_is_accepted_and_resolved_by_local_registry",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Registry/RegistryClusterEndpointTests.cs#Resolve_StillResolvesPlainNwpTargets"
+      ],
+      "gap": "Known-target HTTP resolution is integrated, but the paired-peer ResolveFrame plus unknown-target ErrorFrame case is not executed as written."
+    },
+    "TC-N1-NDP-04": {
+      "status": "unexecuted",
+      "gap": "npsd does not expose the optional GraphFrame topology snapshot capability."
     },
     "TC-N1-NWP-01": {
       "status": "verified",
@@ -92,6 +141,18 @@
     "TC-N1-NWP-05": {
       "status": "not_applicable",
       "disposition": "Optional at L1 and deliberately declined by this profile. npsd advertises ephemeral pull with explicit acknowledgement; it does not advertise resident or hybrid push."
+    },
+    "TC-N1-OBS-01": {
+      "status": "unexecuted",
+      "gap": "No case-complete test proves one structured log entry for each frame direction."
+    },
+    "TC-N1-OBS-02": {
+      "status": "unexecuted",
+      "gap": "No case-complete test proves every required structured frame-log field and type."
+    },
+    "TC-N1-OBS-03": {
+      "status": "unexecuted",
+      "gap": "No case-complete test proves equivalent structured frame logs on stdout and file destinations."
     }
   },
   "explicit_non_claims": [

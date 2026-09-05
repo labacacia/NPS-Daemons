@@ -69,8 +69,8 @@ docker compose up -d npsd
 
 ```bash
 cd npsd
-docker build -t labacacia/npsd:1.0.0-alpha.18 .
-docker run --rm -p 17433:17433 -v npsd-data:/data labacacia/npsd:1.0.0-alpha.18
+docker build -t labacacia/npsd:1.0.0-alpha.19 .
+docker run --rm -p 17433:17433 -v npsd-data:/data labacacia/npsd:1.0.0-alpha.19
 ```
 
 源码构建也行（需要 .NET 10 SDK）：
@@ -90,16 +90,25 @@ dotnet run
 无需 .NET 运行时，开箱即用。Linux 安装包注册 systemd 服务；Windows MSI 通过
 `NT SERVICE\<daemon>` 虚拟账户注册 Windows 服务。
 
-版本号 `1.0.0-alpha.18` 替换为当前发布版本即可。
+版本号 `1.0.0-alpha.19` 替换为当前发布版本即可。
 
 ### Ubuntu / Debian（amd64）
 
 ```bash
-VER=1.0.0~alpha.13   # Debian 版本格式（用 ~ 分隔预发布）
+VER=1.0.0-alpha.19
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v1.0.0-alpha.18/${pkg}_${VER}_amd64.deb"
-    sudo dpkg -i "${pkg}_${VER}_amd64.deb"
+    curl -LO "https://github.com/labacacia/NPS-Daemons/releases/download/v${VER}/${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
+    sudo dpkg -i "${pkg}_${VER//-alpha./~alpha.}_amd64.deb"
 done
+```
+
+也可以只安装需要的 daemon，例如：
+
+```bash
+VER=1.0.0~alpha.13   # Debian 版本格式（用 ~ 替换 -）
+curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v1.0.0-alpha.19/npsd_${VER}_amd64.deb"
+sudo dpkg -i "npsd_${VER}_amd64.deb"
+sudo systemctl status npsd
 ```
 
 配置覆盖文件（升级时保留）：`/etc/nps/<daemon>/env`
@@ -109,7 +118,7 @@ done
 ### Fedora / RHEL（x86_64）
 
 ```bash
-VER=1.0.0-alpha.18
+VER=1.0.0-alpha.19
 RPM_VER=1.0.0
 RPM_REL=0.alpha.6.1
 for pkg in npsd nps-runner nps-ingress nps-registry; do
@@ -125,7 +134,7 @@ done
 ### Windows（x64，MSI）
 
 ```powershell
-$ver = "1.0.0-alpha.18"
+$ver = "1.0.0-alpha.19"
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
     Invoke-WebRequest -Uri "https://github.com/labacacia/NPS-Daemons/releases/download/v$ver/$file" -OutFile $file
@@ -178,9 +187,9 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 - [NPS-Release](https://gitee.com/labacacia/NPS-Release) —— 协议规范。
 - [NPS-Node Profile](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) —— `npsd` 对照构建的合规规范。
-- [NPS-Node-L1 合规](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 21 个 `TC-N1-*` 用例。
-- [NPS-SDK-DotNet](https://gitee.com/labacacia/NPS-SDK-DotNet) —— daemon 依赖的 .NET SDK。
-- [labacacia/NIP-CA-Server](https://gitee.com/labacacia/nip-ca-server) —— 当下用于真签发的单组织 OSS CA。
+- [NPS-Node-L1 合规](https://gitee.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
+- [NPS-sdk-dotnet](https://gitee.com/labacacia/NPS-sdk-dotnet) —— daemon 依赖的 .NET SDK。
+- [labacacia/nip-ca-server](https://gitee.com/labacacia/nip-ca-server) —— 当下用于真签发的单组织 OSS CA。
 
 ## 版本
 
