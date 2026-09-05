@@ -166,7 +166,7 @@ public static class NpsdHost
             {
                 status = "ok",
                 daemon = "npsd",
-                version = "1.0.0-alpha.18",
+                version = "1.0.0-alpha.19",
                 layer = 1,
                 role = "host-local NCP wire + state host",
                 port = opts.Port,

@@ -9,7 +9,7 @@ English | [中文版](./README.cn.md)
 > [`docs/daemons/architecture.md`](../docs/architecture.md)
 > for the broader six-daemon topology.
 
-## Status — v1.0.0-alpha.18
+## Status — v1.0.0-alpha.19
 
 **Implemented native-transport boundary.** The daemon provides:
 
@@ -71,12 +71,12 @@ dotnet run --project tools/daemons/nps-ingress/NpsIngress.csproj
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.18 .
+docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.19 .
 docker run --rm -p 8080:8080 -p 17443:17443 \
   -v "$PWD/secrets:/run/secrets:ro" \
   -e NPSINGRESS_CERT_PATH=/run/secrets/ingress.pfx \
   -e NPSINGRESS_TRUST_ANCHORS_DIR=/run/secrets/client-cas \
-  labacacia/nps-ingress:1.0.0-alpha.18
+  labacacia/nps-ingress:1.0.0-alpha.19
 ```
 
 ## Configuration (environment variables)

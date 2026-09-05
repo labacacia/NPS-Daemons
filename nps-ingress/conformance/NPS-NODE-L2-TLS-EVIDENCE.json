@@ -1,7 +1,10 @@
 {
   "schema_version": 1,
+  "artifact": "NPS-NODE-L2-FAMILY-IMPLEMENTATION-MANIFEST",
+  "implementation": "nps-ingress",
   "profile": "NPS-Node-L2",
-  "profile_version": "0.6",
+  "profile_version": "0.7",
+  "certification_claim": "family_only",
   "claim_scope": [
     "NPS-RFC-0006",
     "TC-N2-Tls"
@@ -9,7 +12,7 @@
   "evidence_status": "executable",
   "iut": {
     "name": "nps-ingress",
-    "version": "1.0.0-alpha.18"
+    "version": "1.0.0-alpha.19"
   },
   "peer": {
     "name": "OpenSSL s_client with disposable Ed25519 NIP test PKI",

@@ -64,7 +64,7 @@
 - **监听**：默认 `127.0.0.1:17433`，在统一端口无损复用 HTTP 控制流量与 local-dev 原生 NCP。
 - **已实现原生边界**：有界 [NPS-RFC-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.cn.md) preamble 与 Hello/Caps 协商、协商后的编码/payload 约束、canonical AnchorFrame ACK/缓存，以及确定性的静默/错误关闭。公网 TLS 1.3/mTLS 终止属于 `nps-ingress`。
 - **已实现状态边界**：root Ed25519 密钥对管理、为本机 agent 签发 sub-NID，以及用于 `ephemeral` HTTP pull + 显式 ack 的持久 per-NID SQLite inbox。未投递帧、绝对 TTL、优先级顺序和 ack 均跨 daemon 重启保留。
-- **明确限制**：不宣称完整 Node L1。精确 NCP/NDP/NWP 证据和缺口见 [`NPS-NODE-L1-MANIFEST.json`](../npsd/conformance/NPS-NODE-L1-MANIFEST.json)。resident/hybrid push 在 L1 可选，本 profile 明确拒绝；BYO-key agent 不会自动广播，因为 npsd 不持有其私钥，也不得冒充 publisher 签名。
+- **明确限制**：不宣称完整 Node L1。全部 20 个 L1 用例、当前证据状态、可运行门禁和剩余缺口见 [`NPS-NODE-L1-MANIFEST.json`](../npsd/conformance/NPS-NODE-L1-MANIFEST.json)。resident/hybrid push 在 L1 可选，本 profile 明确拒绝；BYO-key agent 不会自动广播，因为 npsd 不持有其私钥，也不得冒充 publisher 签名。
 - **为什么必须常驻**：身份和 inbox 不能跟着 session 走 —— 持久状态需要宿主进程。本机所有 NPS 客户端（MCP shim、resident agent、worker、ingress shim）都通过它接入。
 - **为什么不能合并**：协议层是业务无关的，所有上层共享；合并到任何业务进程都会污染信任域。
 - **参考合规**：目标是 `NPS-Node Profile L1`（见 [`spec/services/NPS-Node-Profile.cn.md`](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) 与 [`spec/services/conformance/NPS-Node-L1.cn.md`](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md)）。

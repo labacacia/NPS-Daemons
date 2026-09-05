@@ -7,14 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>nps-registry</AssemblyName>
     <RootNamespace>NPS.Daemon.Registry</RootNamespace>
-    <Version>1.0.0-alpha.18</Version>
+    <Version>1.0.0-alpha.19</Version>
     <Description>NPS Daemon — Layer 2 cross-machine NDP discovery registry (nps-registry). Centralised discovery service responding to Resolve / Graph queries, aggregating registrations from multiple machines.</Description>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LabAcacia.NPS.Core"    Version="1.0.0-alpha.18" />
-    <PackageReference Include="LabAcacia.NPS.NDP"     Version="1.0.0-alpha.18" />
+    <PackageReference Include="LabAcacia.NPS.Core"    Version="1.0.0-alpha.19" />
+    <PackageReference Include="LabAcacia.NPS.NDP"     Version="1.0.0-alpha.19" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
   </ItemGroup>

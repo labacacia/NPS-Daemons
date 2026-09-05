@@ -7,7 +7,7 @@
 > 完整六-daemon 拓扑见
 > [`docs/daemons/architecture.cn.md`](../docs/architecture.cn.md)。
 
-## 状态 —— v1.0.0-alpha.18
+## 状态 —— v1.0.0-alpha.19
 
 **native transport 边界已实现。** daemon 提供：
 
@@ -60,12 +60,12 @@ dotnet run --project tools/daemons/nps-ingress/NpsIngress.csproj
 ### Docker
 
 ```bash
-docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.18 .
+docker build -f tools/daemons/nps-ingress/Dockerfile -t labacacia/nps-ingress:1.0.0-alpha.19 .
 docker run --rm -p 8080:8080 -p 17443:17443 \
   -v "$PWD/secrets:/run/secrets:ro" \
   -e NPSINGRESS_CERT_PATH=/run/secrets/ingress.pfx \
   -e NPSINGRESS_TRUST_ANCHORS_DIR=/run/secrets/client-cas \
-  labacacia/nps-ingress:1.0.0-alpha.18
+  labacacia/nps-ingress:1.0.0-alpha.19
 ```
 
 ## 配置（环境变量）

@@ -28,12 +28,20 @@ public sealed class IngressTlsEvidenceManifestTests
         var root = document.RootElement;
 
         Assert.Equal("NPS-Node-L2", root.GetProperty("profile").GetString());
+        Assert.Equal("0.7", root.GetProperty("profile_version").GetString());
+        Assert.Equal(
+            "NPS-NODE-L2-FAMILY-IMPLEMENTATION-MANIFEST",
+            root.GetProperty("artifact").GetString());
+        Assert.Equal("family_only", root.GetProperty("certification_claim").GetString());
         Assert.Equal("executable", root.GetProperty("evidence_status").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            root.GetProperty("run").GetProperty("command").GetString()));
         var cases = root.GetProperty("cases").EnumerateArray().ToArray();
         Assert.Equal(ExpectedIds, cases.Select(c => c.GetProperty("id").GetString()));
         Assert.All(cases, c => Assert.Equal("pass", c.GetProperty("result").GetString()));
         Assert.Equal(4, root.GetProperty("summary").GetProperty("pass").GetInt32());
         Assert.Equal(0, root.GetProperty("summary").GetProperty("fail").GetInt32());
+        Assert.Equal(4, root.GetProperty("summary").EnumerateObject().Sum(item => item.Value.GetInt32()));
 
         var testTraits = typeof(IngressTlsConformanceTests)
             .GetMethods(BindingFlags.Instance | BindingFlags.Public)

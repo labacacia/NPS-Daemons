@@ -2,14 +2,24 @@
   "artifact": "NPS-NODE-L3-IMPLEMENTATION-MANIFEST",
   "version": 1,
   "implementation": "nps-runner",
+  "profile": "NPS-Node-L3",
+  "profile_version": "0.2",
   "candidate_work": "1.0.0-alpha.19-debt-closure",
   "suite": "spec/services/conformance/NPS-Node-L3.md@0.2",
   "certification_claim": "not_claimed",
   "deployment_scope": "runner processes on one host sharing one persistent SQLite state file",
+  "run": {
+    "commands": [
+      "dotnet test tools/daemons/nps-runner/tests/NpsRunner.Tests.csproj -c Release",
+      "dotnet test tools/daemons/nps-runner/tests/NpsRunner.Tests.csproj -c Release --filter FullyQualifiedName~RunnerCapabilityContractTests"
+    ],
+    "environment": "linux-x64; .NET 10; Docker-compatible OCI runtime for portable spawn cases"
+  },
   "summary": {
     "verified": 3,
     "partial": 5,
     "not_executed": 2,
+    "total_cases": 10,
     "all_cases_required_for_certification": true
   },
   "cases": {

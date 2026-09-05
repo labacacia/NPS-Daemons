@@ -6,7 +6,7 @@
 
 ---
 
-## [未发布] —— alpha.19 债务收口
+## [1.0.0-alpha.19] —— 2026-09-05
 
 ### 变更
 
@@ -25,6 +25,8 @@
   NID 不一致的会话关闭前发送结构化 `ErrorFrame`。
 - 发布角色范围证据 manifest，但不宣称拓扑、Bridge、HA、Registry、admission-control
   family 或完整 NPS-Node-L2 已认证。
+- 将该 artifact 规范化为可运行、完整覆盖四项 scope 的 family manifest，并纳入
+  registry；不会把角色不适用 family 伪装成 partial `na`。
 - 修复正常的交互式 native 握手路径：ingress 先转发后端 Caps，再等待 Caps 之后的
   IdentFrame，并在转发 Ident 前校验证书 NID。无效 preamble、非 Hello 首帧、超大
   frame 与慢速不完整握手都会在连接后端前关闭。
@@ -64,6 +66,15 @@
 ## [1.0.0-alpha.14] —— 2026-06-26
 
 - 套件版本同步到 1.0.0-alpha.14。
+
+## [1.0.0-alpha.14] —— 2026-06-13
+
+### 新增
+
+- **L2 native-mode TLS terminator**（`NcpTlsListener`，NPS-RFC-0006 §6）：
+  在 TLS 1.3 上协商 ALPN `nps/1.0` 与 mTLS，校验证书链并把证书 NID 绑定到
+  session；`CheckSessionNidBinding` 以 `NCP-NID-MISMATCH` 拒绝不一致身份。
+  新增 ingress TLS/backend/certificate/trust-anchor 配置与 5 项 validator 测试。
 
 ## [1.0.0-alpha.7] —— 2026-05-18
 

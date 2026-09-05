@@ -8,6 +8,20 @@ namespace NPS.Daemon.Runner.Tests;
 
 public sealed class RunnerCapabilityContractTests
 {
+    private static readonly string[] ExpectedCaseIds =
+    [
+        "TC-N3-Claim-01",
+        "TC-N3-Claim-02",
+        "TC-N3-Claim-03",
+        "TC-N3-Spawn-01",
+        "TC-N3-Spawn-02",
+        "TC-N3-Spawn-03",
+        "TC-N3-Life-01",
+        "TC-N3-Life-02",
+        "TC-N3-DAG-01",
+        "TC-N3-Saga-01",
+    ];
+
     [Fact]
     public void Machine_readable_contract_preserves_implemented_and_unclaimed_boundaries()
     {
@@ -41,12 +55,16 @@ public sealed class RunnerCapabilityContractTests
         Assert.Equal(
             "not_claimed",
             manifest.RootElement.GetProperty("certification_claim").GetString());
+        Assert.NotEmpty(
+            manifest.RootElement.GetProperty("run").GetProperty("commands").EnumerateArray());
         var summary = manifest.RootElement.GetProperty("summary");
         Assert.Equal(3, summary.GetProperty("verified").GetInt32());
         Assert.Equal(5, summary.GetProperty("partial").GetInt32());
         Assert.Equal(2, summary.GetProperty("not_executed").GetInt32());
         var cases = manifest.RootElement.GetProperty("cases");
         Assert.Equal(10, cases.EnumerateObject().Count());
+        Assert.Equal(10, summary.GetProperty("total_cases").GetInt32());
+        Assert.Equal(ExpectedCaseIds.Order(), cases.EnumerateObject().Select(item => item.Name).Order());
         Assert.Equal(
             summary.GetProperty("verified").GetInt32(),
             cases.EnumerateObject().Count(item =>
