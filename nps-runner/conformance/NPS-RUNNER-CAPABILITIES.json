@@ -1,0 +1,50 @@
+{
+  "artifact": "NPS-RUNNER-CAPABILITIES",
+  "version": 2,
+  "source_baseline": "1.0.0-alpha.18",
+  "candidate_work": "1.0.0-alpha.19-debt-closure",
+  "capabilities": {
+    "inbox_dispatch": {
+      "status": "implemented",
+      "evidence": ["InboxWatcher.cs"]
+    },
+    "portable_oci_spawn_spec": {
+      "status": "implemented",
+      "evidence": [
+        "tests/PortableRuntimeConformanceTests.cs",
+        "tests/SpawnSpecResolverTests.cs"
+      ]
+    },
+    "legacy_direct_subprocess": {
+      "status": "compatibility",
+      "evidence": ["tests/PortableRuntimeConformanceTests.cs"]
+    },
+    "periodic_lease_renewal": {
+      "status": "implemented",
+      "scope": "shared persistent SQLite state file",
+      "evidence": ["tests/LeaseRenewalLoopTests.cs"]
+    },
+    "lease_loss_cancellation": {
+      "status": "implemented",
+      "scope": "process-instance fenced ownership",
+      "evidence": [
+        "tests/LeaseRenewalLoopTests.cs",
+        "tests/WorkerManagerLeaseLossTests.cs"
+      ]
+    },
+    "task_lease_and_terminal_dedup": {
+      "status": "implemented",
+      "scope": "runner processes sharing one persistent SQLite state file",
+      "evidence": ["tests/LeaseStoreTests.cs"],
+      "not_claimed": [
+        "cross-host coordination without a filesystem offering correct SQLite locking and durability",
+        "multi-node TaskFrame resume"
+      ]
+    },
+    "node_l3_certification": {
+      "status": "not_claimed",
+      "manifest": "NPS-NODE-L3-MANIFEST.json",
+      "reason": "The strict case manifest records three verified, five partial and two unexecuted cases; all ten are required for certification."
+    }
+  }
+}

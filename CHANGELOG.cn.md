@@ -8,6 +8,18 @@
 
 ---
 
+## [未发布]
+
+### 变更
+
+- 将独立 bundle 与 alpha.19 技债收口源树对齐：持久 npsd inbox、续租、签名
+  NDP 在线广播，runner 租约围栏，ingress native TLS 准入，以及真实
+  SQLite/federated registry surface。
+- 显式连通 compose 内各服务，并持久化 runner 租约状态。
+- 用二进制内建探针替换 ingress/registry 的 `wget` 健康检查，修复物化后的
+  架构链接，并统一使用 LabAcacia Cloud CA/Ledger 的规范仓库名。本条不包含
+  版本升级或发布。
+
 ## [1.0.0-alpha.18] —— 2026-08-15
 
 ### 变更

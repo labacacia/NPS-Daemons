@@ -1,0 +1,105 @@
+{
+  "artifact": "NPS-NODE-L1-IMPLEMENTATION-MANIFEST",
+  "version": 1,
+  "implementation": "npsd",
+  "candidate_work": "1.0.0-alpha.19-debt-closure",
+  "suite": "spec/services/conformance/NPS-Node-L1.md@0.1",
+  "certification_claim": "not_claimed",
+  "deployment_scope": "local-dev plaintext TCP and HTTP multiplexed on one configured endpoint; default loopback, non-loopback only in an operator-isolated network",
+  "summary": {
+    "ncp_verified": 2,
+    "ncp_partial": 2,
+    "ndp_verified": 2,
+    "nwp_verified": 3,
+    "nwp_unexecuted": 1,
+    "nwp_not_applicable": 1,
+    "full_l1_cases": 21,
+    "all_cases_required_for_certification": true
+  },
+  "cases": {
+    "TC-N1-NCP-01": {
+      "status": "partial",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Ncp/FrameCodecTests.cs",
+        "impl/dotnet/tests/NPS.Tests/Ncp/NcpNativeServerConformanceTests.cs"
+      ],
+      "gap": "The shared .NET codecs execute the required Tier-1 frame types, but npsd does not expose the conformance suite's general-purpose echo fixture."
+    },
+    "TC-N1-NCP-02": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#UnifiedPort_ServesHttpAndNativeNcpHandshake",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#AnchorFrame_IsAcknowledgedAndCached",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#AnchorWithMismatchedDigest_EmitsErrorAndCloses"
+      ]
+    },
+    "TC-N1-NCP-03": {
+      "status": "partial",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#DefaultBind_IsLoopbackUnifiedPort",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#UnifiedPort_ServesHttpAndNativeNcpHandshake"
+      ],
+      "gap": "The default values and real loopback listener are verified with a collision-free test port; the suite's literal 17433 probe is reserved for an isolated process-level conformance run."
+    },
+    "TC-N1-NCP-04": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NativeNcpTests.cs#JsonOnlyServer_RejectsTier2OnlyHelloWithoutFallback"
+      ]
+    },
+    "TC-N1-NDP-01": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Managed_agent_emits_ephemeral_announce_signed_by_its_ident_key",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Liveness_sequence_and_managed_key_survive_restart",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Byo_key_and_revoked_agents_are_not_auto_announced",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Signed_announce_is_accepted_and_resolved_by_local_registry"
+      ],
+      "note": "Active npsd-managed agents emit activation_mode=ephemeral with a bounded heartbeat and persistent monotonic graph_seq. Graceful shutdown emits TTL 0."
+    },
+    "TC-N1-NDP-02": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Managed_agent_emits_ephemeral_announce_signed_by_its_ident_key",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/NdpAnnouncementTests.cs#Liveness_sequence_and_managed_key_survive_restart"
+      ],
+      "note": "Portable NDP canonical verification succeeds under the IdentFrame public key and fails after signed capability data is tampered. BYO-key agents are excluded rather than signed by the host root."
+    },
+    "TC-N1-NWP-01": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/InboxTests.cs#Undelivered_ActionFrame_survives_host_restart_bit_identical"
+      ]
+    },
+    "TC-N1-NWP-02": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/InboxTests.cs#Undelivered_ActionFrame_survives_host_restart_bit_identical",
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/InboxTests.cs#Durable_store_preserves_priority_and_expires_by_absolute_deadline"
+      ]
+    },
+    "TC-N1-NWP-03": {
+      "status": "verified",
+      "evidence": [
+        "impl/dotnet/tests/NPS.Tests/Daemons/Npsd/InboxTests.cs#Pull_ack_sequence_drains_fifo_and_empty_pull_is_immediate"
+      ],
+      "note": "The npsd local profile exposes NWP pull as HTTP peek plus explicit durable acknowledgement."
+    },
+    "TC-N1-NWP-04": {
+      "status": "unexecuted",
+      "gap": "The required sustained 100 QPS for 10 seconds with a 10000-row fixture has not yet been run on the specified 1 vCPU and 1 GB baseline."
+    },
+    "TC-N1-NWP-05": {
+      "status": "not_applicable",
+      "disposition": "Optional at L1 and deliberately declined by this profile. npsd advertises ephemeral pull with explicit acknowledgement; it does not advertise resident or hybrid push."
+    }
+  },
+  "explicit_non_claims": [
+    "Full NPS-Node L1 certification",
+    "Production or public non-loopback plaintext native transport",
+    "Native NWP/NIP/NDP/NOP application-frame handling",
+    "Resident or hybrid inbox push delivery",
+    "TC-N1-NWP-04 performance conformance",
+    "QUIC, rekeying, TLS termination, or mTLS admission in npsd"
+  ]
+}

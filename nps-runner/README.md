@@ -9,11 +9,19 @@ English | [中文版](./README.cn.md)
 > [`docs/daemons/architecture.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md)
 > for the broader six-daemon topology.
 
-## Status — alpha.18 candidate
+## Status — alpha.18 source / alpha.19 debt-closure candidate
 
-Inbox watching, CR-0007 task leases, portable OCI SpawnSpec execution, and
-legacy direct-subprocess compatibility are implemented. Deployment-specific
-Layer-3 certification remains a separate conformance step.
+Inbox watching, portable OCI SpawnSpec execution, reference resolution,
+periodic lease renewal, lease-loss worker cancellation, and legacy
+direct-subprocess compatibility are implemented. Task leases and terminal
+deduplication use a durable SQLite state file. Runner processes configured with
+the same file coordinate claims, fence restarted processes with a fresh instance
+identity, reclaim expired leases, and preserve terminal dedup across restart.
+Full Layer-3 TaskFrame DAG/Saga certification is not claimed; the case-by-case
+boundary is recorded in
+[`conformance/NPS-NODE-L3-MANIFEST.json`](./conformance/NPS-NODE-L3-MANIFEST.json)
+and the capability contract is
+[`conformance/NPS-RUNNER-CAPABILITIES.json`](./conformance/NPS-RUNNER-CAPABILITIES.json).
 
 ## Quick start
 
@@ -30,6 +38,7 @@ docker build -f tools/daemons/nps-runner/Dockerfile -t labacacia/nps-runner:1.0.
 docker run --rm \
   -e NPSD_URL=http://127.0.0.1:17433 \
   -e NPS_RUNNER_LOG_DIR=/var/log/nps-runner \
+  -v nps-runner-state:/var/lib/nps-runner \
   labacacia/nps-runner:1.0.0-alpha.18
 ```
 
@@ -44,6 +53,7 @@ All configuration is via environment variables.
 | `NPS_RUNNER_POLL_INTERVAL_MS` | `1000` | Inbox poll interval (also sets the long-poll `wait` window) |
 | `NPS_RUNNER_MAX_CONCURRENT_WORKERS` | `8` | Cap on simultaneously running worker processes |
 | `NPS_RUNNER_LOG_DIR` | `/tmp/nps-runner-logs` | Directory for per-worker `{task_id}.log` files |
+| `NPS_RUNNER_STATE_PATH` | `/tmp/nps-runner-state/leases.db` (image: `/var/lib/nps-runner/leases.db`) | Persistent SQLite lease and terminal-dedup database; replicas coordinate only when configured with the same correctly locked storage |
 | `NPS_RUNNER_OCI_RUNTIME` | `docker` | OCI-compatible CLI used for portable SpawnSpecs |
 | `NPS_REGISTRY_URL` | `http://127.0.0.1:17436` | NDP registry used to resolve `nwp://` SpawnSpec references |
 
@@ -124,13 +134,22 @@ and `work_dir` defaults to the runner's current working directory.
 
 ### 3. Worker lifecycle
 
-1. Message arrives → resolve and validate the spawn spec → check concurrency cap.
-2. If at cap: message stays unacked and reappears next poll cycle.
-3. Otherwise: claim the task lease and start the OCI container or legacy subprocess.
+1. Message arrives → resolve and validate the spawn spec → atomically claim its durable task lease.
+2. A live claim conflict stays unacked. A durable terminal duplicate is acked without execution.
+3. After a granted or expired-lease claim, acquire a worker slot and start the OCI container or legacy subprocess. If at cap, release the owned lease and leave the message unacked.
 4. stdout + stderr are captured to `NPS_RUNNER_LOG_DIR/{task_id}.log`.
-5. Monitor loop (5 s tick) renews the lease and checks idle and max-runtime deadlines.
-6. On exit (any cause): ack the inbox message; if `reply_to` is set, POST a
-   completion notification (JSON, `Content-Type: application/json`) to that NID.
+5. A renewal loop refreshes the durable lease at half its bounded window;
+   the worker monitor separately checks idle and max-runtime deadlines every 5 s.
+6. On terminal exit, atomically record durable dedup state and release the lease;
+   only then ack the inbox message and, when `reply_to` is set, POST a completion
+   notification (JSON, `Content-Type: application/json`) to that NID.
+7. If lease ownership is lost or expires, cancel the stale worker and do not
+   record terminal state, ack, or notify.
+
+For restart recovery, `NPS_RUNNER_STATE_PATH` must live on persistent storage.
+Every coordinating runner process must point to the same SQLite file. Cross-host
+use additionally requires storage with correct SQLite locking and durability;
+no generic network-filesystem guarantee is claimed.
 
 ### 4. Completion notification
 
@@ -160,12 +179,15 @@ must not have a permission surface for.
 
 ## Verification
 
-The standalone daemon bundle includes the shared NOP fixtures under
-`spec/conformance/nop`. Run:
+From the monorepo root, run:
 
 ```bash
-dotnet test nps-runner/tests/NpsRunner.Tests.csproj -c Release
+dotnet test tools/daemons/nps-runner/tests/NpsRunner.Tests.csproj -c Release
 ```
+
+The standalone daemon bundle uses
+`dotnet test nps-runner/tests/NpsRunner.Tests.csproj -c Release` and includes
+the shared NOP fixtures under `spec/conformance/nop`.
 
 ## License
 

@@ -20,4 +20,15 @@
     <ProjectReference Include="..\NpsRunner.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\conformance\NPS-NODE-L3-MANIFEST.json">
+      <Link>conformance\NPS-NODE-L3-MANIFEST.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\conformance\NPS-RUNNER-CAPABILITIES.json">
+      <Link>conformance\NPS-RUNNER-CAPABILITIES.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

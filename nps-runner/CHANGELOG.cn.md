@@ -6,6 +6,24 @@
 
 ---
 
+## [未发布]
+
+### 修复
+
+- 将 runner 的机器可读 conformance manifest 打包到 standalone 测试输出，
+  使同一能力契约可在 monorepo 与物化布局中执行。
+- 用持久化 SQLite store 替换进程内任务租约与终态去重 map。指向同一状态文件的
+  进程现在会原子 claim、跨重启保留终态节点、回收过期租约，并以每次启动的新
+  process-instance identity 围栏旧进程或重启前进程。
+- claim 冲突的 inbox 消息保持未 ack；先原子提交终态再 ack；租约丢失时取消
+  worker，且不写终态、不 ack、不发送完成通知。确定性测试覆盖完整旧属主路径。
+- 新增机器可读 Node L3 implementation manifest：三个严格 case 已验证、五个为
+  部分验证，TaskFrame DAG/Saga 部署 case 明确未执行，因此不声明完整 L3 认证。
+- 公开 resolver 的依赖注入构造器以修复生产启动；同时修复两条 Docker 构建路径，
+  改用基础镜像自带的非 root `app` 账户、复制完整独立源码树，并配置持久化状态卷。
+- 修正仍把当前 runner 描述为骨架的陈旧文本，同时把 alpha.3/alpha.4 记录保留为
+  明确历史。
+
 ## [1.0.0-alpha.18] —— 2026-08-15
 
 ### 变更
@@ -25,8 +43,8 @@
 - 加固远程 SpawnSpec 拉取的 SSRF 与 DNS rebinding 防护：拒绝非公网 DNS
   结果，仅连接已校验地址并保留 TLS 主机名校验，逐跳重验重定向，并限制
   重定向次数、响应大小与请求时间。
-- Worker 丢失租约后不再写入终态或 ack inbox，把完成权留给已回收租约的
-  Runner。
+- Worker 丢失进程内租约后不再写入终态或 ack inbox，使消息可由后续本地
+  claim 处理。
 
 ## [1.0.0-alpha.16] —— 2026-07-23
 
@@ -44,7 +62,14 @@
 
 ## [1.0.0-alpha.14] —— 2026-06-26
 
-- 套件版本同步到 1.0.0-alpha.14。
+### 新增
+
+- **NPS-CR-0007 任务 claim 决策逻辑**（`LeaseStore.cs`）。Inbox 调度在 spawn
+  前按 `task_id` 获取进程内租约；本地冲突返回 `NOP-CLAIM-CONFLICT`。租约限制在
+  `[10, 600]s`、在本进程内过期，携带
+  `dedup_key = sha256(task_id ‖ dag_hash)`，并在 worker 完成时释放。历史更正：
+  该内存实现当时不能协调多个副本，也不能在进程崩溃后保留租约或终态去重；
+  持久化/共享语义仍是后续工作（CR-0007 §10 OQ-1）。
 
 ## [1.0.0-alpha.7] —— 2026-05-18
 
