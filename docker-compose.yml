@@ -16,7 +16,7 @@ services:
     build:
       context: ./npsd
       dockerfile: Dockerfile
-    image: labacacia/npsd:1.0.0-alpha.18
+    image: labacacia/npsd:1.0.0-alpha.19
     restart: unless-stopped
     ports:
       - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-ingress
@@ -35,7 +35,7 @@ services:
     build:
       context: ./nps-runner
       dockerfile: Dockerfile
-    image: labacacia/nps-runner:1.0.0-alpha.18
+    image: labacacia/nps-runner:1.0.0-alpha.19
     restart: unless-stopped
     depends_on:
       - npsd
@@ -49,7 +49,7 @@ services:
     build:
       context: ./nps-ingress
       dockerfile: Dockerfile
-    image: labacacia/nps-ingress:1.0.0-alpha.18
+    image: labacacia/nps-ingress:1.0.0-alpha.19
     restart: unless-stopped
     ports:
       - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -63,7 +63,7 @@ services:
     build:
       context: ./nps-registry
       dockerfile: Dockerfile
-    image: labacacia/nps-registry:1.0.0-alpha.18
+    image: labacacia/nps-registry:1.0.0-alpha.19
     restart: unless-stopped
     ports:
       - "${NPS_REGISTRY_PORT:-17436}:17436"

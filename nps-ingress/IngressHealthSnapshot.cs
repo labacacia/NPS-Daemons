@@ -24,7 +24,7 @@ internal sealed record IngressHealthSnapshot(
     public static IngressHealthSnapshot Create(IngressOptions options) => new(
         Status: "ok",
         Daemon: "nps-ingress",
-        Version: "1.0.0-alpha.18",
+        Version: "1.0.0-alpha.19",
         Layer: 2,
         Role: "Internet ingress (L2: NCP-over-TLS terminator)",
         SpecReference: "NPS-RFC-0006 §6; docs/daemons/architecture.md",

@@ -3,7 +3,7 @@
   "iut": {
     "name": "nps-ingress",
     "role": "NCP-over-TLS transport terminator",
-    "version": "1.0.0-alpha.18"
+    "version": "1.0.0-alpha.19"
   },
   "current_contract": {
     "specification": "NPS-RFC-0006 §6",

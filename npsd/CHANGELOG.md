@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — alpha.19 debt closure
+## [1.0.0-alpha.19] — 2026-09-05
 
 ### Added
 

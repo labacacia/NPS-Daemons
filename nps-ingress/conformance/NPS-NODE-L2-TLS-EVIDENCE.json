@@ -12,7 +12,7 @@
   "evidence_status": "executable",
   "iut": {
     "name": "nps-ingress",
-    "version": "1.0.0-alpha.18"
+    "version": "1.0.0-alpha.19"
   },
   "peer": {
     "name": "OpenSSL s_client with disposable Ed25519 NIP test PKI",

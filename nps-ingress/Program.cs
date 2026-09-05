@@ -64,6 +64,6 @@ var app = builder.Build();
 
 app.MapGet("/health", () => Results.Json(IngressHealthSnapshot.Create(ingressOptions)));
 
-app.Logger.LogInformation("nps-ingress v1.0.0-alpha.18 starting (L2 NCP-over-TLS terminator per NPS-RFC-0006 §6 — enable via NPSINGRESS_CERT_PATH; see docs/daemons/architecture.md)");
+app.Logger.LogInformation("nps-ingress v1.0.0-alpha.19 starting (L2 NCP-over-TLS terminator per NPS-RFC-0006 §6 — enable via NPSINGRESS_CERT_PATH; see docs/daemons/architecture.md)");
 app.Run();
 return 0;

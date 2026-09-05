@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>nps-runner</AssemblyName>
     <RootNamespace>NPS.Daemon.Runner</RootNamespace>
-    <Version>1.0.0-alpha.18</Version>
+    <Version>1.0.0-alpha.19</Version>
     <Description>NPS Daemon — task scheduler / FaaS runtime (nps-runner). Executes portable OCI SpawnSpecs or legacy subprocesses with bounded lifecycle and durable SQLite lease coordination. Full L3 TaskFrame/DAG certification is not claimed.</Description>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
@@ -22,8 +22,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
-    <PackageReference Include="LabAcacia.NPS.Core" Version="1.0.0-alpha.18" />
-    <PackageReference Include="LabAcacia.NPS.NOP"  Version="1.0.0-alpha.18" />
+    <PackageReference Include="LabAcacia.NPS.Core" Version="1.0.0-alpha.19" />
+    <PackageReference Include="LabAcacia.NPS.NOP"  Version="1.0.0-alpha.19" />
   </ItemGroup>
 
 </Project>
