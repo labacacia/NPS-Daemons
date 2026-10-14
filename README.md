@@ -2,6 +2,8 @@ English | [中文版](./README.cn.md)
 
 # NPS Daemons
 
+> First time here? Start with [START-HERE.md](START-HERE.md) for architecture, security, and review guidance.
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](./LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/labacacia/NPS-Daemons?include_prereleases)](https://github.com/labacacia/NPS-Daemons/releases)
 [![Architecture](https://img.shields.io/badge/architecture-3--layer-success)](./docs/architecture.md)
@@ -12,7 +14,7 @@ layers of the standard NPS deployment topology.
 
 > Source of truth: [github.com/labacacia/NPS-Daemons](https://github.com/labacacia/NPS-Daemons) ·
 > Mirror: [gitee.com/labacacia/nps-daemons](https://gitee.com/labacacia/nps-daemons) ·
-> Suite: [NPS-Release](https://github.com/labacacia/NPS-Release) ·
+> Suite: [NPS-Release](https://github.com/labacacia/NPS) ·
 > Architecture: [docs/architecture.md](./docs/architecture.md)
 
 ---
@@ -32,14 +34,11 @@ cadence and a base image but build and ship independently.
 
 ### What is NOT in this repo
 
-The **trust-anchor / cloud** daemons are maintained in separate LabAcacia
-repositories and are intentionally not materialized into this four-daemon bundle:
-
-- [`labacacia/NPS-Cloud-CA`](https://github.com/labacacia/NPS-Cloud-CA) — cross-organisation NID Certificate Authority + CRL/OCSP.
-- [`labacacia/NPS-Ledger`](https://github.com/labacacia/NPS-Ledger) — append-only Certificate-Transparency-style reputation log per [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md).
-
-For self-host CA needs **today**, use [`labacacia/NIP-CA-Server`](https://github.com/labacacia/NIP-CA-Server)
-— the OSS single-organisation CA — instead.
+The trust-anchor role is distributed separately as
+[`labacacia/NIP-CA-Server`](https://github.com/labacacia/NIP-CA-Server),
+the active OSS single-organisation CA. The former `NPS-Cloud-CA` and
+`NPS-Ledger` prototype repositories are archived design history and are not
+deployable members of the active release train.
 
 ---
 
@@ -47,7 +46,7 @@ For self-host CA needs **today**, use [`labacacia/NIP-CA-Server`](https://github
 
 ```bash
 git clone https://github.com/labacacia/NPS-Daemons.git
-cd nps-daemons
+cd NPS-Daemons
 docker compose up -d
 
 # Each daemon's /health is reachable on its own port
@@ -192,9 +191,9 @@ Short version:
 
 ## Spec & SDK references
 
-- [NPS-Release](https://github.com/labacacia/NPS-Release) — protocol specifications.
-- [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification `npsd` is being built to satisfy.
-- [NPS-Node-L1 conformance](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — 20 `TC-N1-*` cases.
+- [NPS-Release](https://github.com/labacacia/NPS) — protocol specifications.
+- [NPS-Node Profile](https://github.com/labacacia/NPS/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification `npsd` is being built to satisfy.
+- [NPS-Node-L1 conformance](https://github.com/labacacia/NPS/blob/main/spec/services/conformance/NPS-Node-L1.md) — 20 `TC-N1-*` cases.
 - [NPS-SDK-DotNet](https://github.com/labacacia/NPS-SDK-DotNet) — the .NET SDK these daemons consume.
 - [labacacia/NIP-CA-Server](https://github.com/labacacia/NIP-CA-Server) — the single-org OSS CA for actual cert issuance today.
 

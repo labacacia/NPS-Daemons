@@ -18,7 +18,7 @@ expiry (no background timer needed); a monotonic per-cluster graph
 sequence counter bumps on every Announce or eviction. File-backed or
 in-memory storage is selected via env.
 
-**Multi-Anchor HA ([NPS-CR-0009](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md), NDP §9).**
+**Multi-Anchor HA ([NPS-CR-0009](https://github.com/labacacia/NPS/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md), NDP §9).**
 `AnnounceFrame.cluster_epoch` (uint64, absent ⇒ `1`) is accepted and persisted;
 resolving a `cluster_anchor` NID returns the live Anchor holding the **highest**
 epoch; an equal-epoch tie between two live Anchors is a split-brain fault
@@ -68,7 +68,7 @@ docker run --rm -p 17436:17436 \
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `NPSREGISTRY_PORT` | `17436` | TCP port to bind. NDP optional-dedicated per [NPS-4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md). |
+| `NPSREGISTRY_PORT` | `17436` | TCP port to bind. NDP optional-dedicated per [NPS-4](https://github.com/labacacia/NPS/blob/main/spec/NPS-4-NDP.md). |
 | `NPSREGISTRY_HOST` | `0.0.0.0` | Bind address. A registry is intentionally network-facing. |
 | `NPSREGISTRY_SQLITE_PATH` | *(in-memory)* | Path to the SQLite database file. Unset → ephemeral in-memory store. |
 | `NPSREGISTRY_NID` | `urn:nps:agent:nps-registry:local` | This registry's own NID. Used for NDP §9 federation loop detection against `ndp-forwarded-by`. |
@@ -76,7 +76,7 @@ docker run --rm -p 17436:17436 \
 
 ## Spec references
 
-- [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md) — the discovery protocol whose registry surface this daemon implements.
+- [NPS-4 NDP](https://github.com/labacacia/NPS/blob/main/spec/NPS-4-NDP.md) — the discovery protocol whose registry surface this daemon implements.
 - [Daemon architecture §④](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md#-nps-registry--discovery-registry-l2-stage-optionally-hosted) — why the registry is its own daemon rather than part of `npsd`.
 
 ## License

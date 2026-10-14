@@ -81,7 +81,7 @@
   `.msi`（Windows x64）安装包现已作为 GitHub Release Assets 与 Docker 镜像一同发布。
   每个安装包均包含自包含二进制，无需 .NET 运行时依赖。Linux 安装包注册 systemd service 单元文件；
   Windows MSI 通过 `NT SERVICE\<daemon>` 虚拟账户注册 Windows 服务。安装说明：
-  参见 [NPS Wiki — Operator Quickstart Bundle](https://github.com/labacacia/NPS-Release/wiki/Operator-Quickstart-Bundle#option-b-native-packages-systemd--windows-service)。
+  参见 [NPS Wiki — Operator Quickstart Bundle](https://github.com/labacacia/NPS/wiki/Operator-Quickstart-Bundle#option-b-native-packages-systemd--windows-service)。
 
 ### 变更
 

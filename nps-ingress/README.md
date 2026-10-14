@@ -48,7 +48,7 @@ dotnet test tools/daemons/nps-ingress/tests/NpsIngress.Tests.csproj
 This is the **process** called `nps-ingress`. The *spec-level* role of
 "cluster control plane that routes NPS frames into NOP" was renamed
 **Anchor Node** by
-[NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md).
+[NPS-CR-0001](https://github.com/labacacia/NPS/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md).
 The process MAY host `NPS.NWP.Anchor` middleware; alpha.18 does not implement
 that wiring.
 
