@@ -120,11 +120,11 @@ docker run --rm -p 17433:17433 \
 
 ## 规范参考
 
-- [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) —— 本 daemon 对照构建的合规规范。
-- [NPS-Node-L1 合规](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
+- [NPS-Node Profile](https://github.com/labacacia/NPS/blob/main/spec/services/NPS-Node-Profile.cn.md) —— 本 daemon 对照构建的合规规范。
+- [NPS-Node-L1 合规](https://github.com/labacacia/NPS/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
 - [Daemon 架构](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md) —— 六 daemon、三层参考部署。
-- [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.cn.md) —— 线层。
-- [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.cn.md) —— root keypair / IdentFrame 语义。
+- [NPS-1 NCP](https://github.com/labacacia/NPS/blob/main/spec/NPS-1-NCP.cn.md) —— 线层。
+- [NPS-3 NIP](https://github.com/labacacia/NPS/blob/main/spec/NPS-3-NIP.cn.md) —— root keypair / IdentFrame 语义。
 
 ## License
 

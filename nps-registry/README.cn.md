@@ -13,7 +13,7 @@
 公告以 TTL lazy expiry 方式持久化（无需后台定时器），每次 Announce 或
 eviction 均自增单调 per-cluster graph 序号。文件存储或内存存储通过 env 选择。
 
-**多 Anchor 高可用（[NPS-CR-0009](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md)，NDP §9）。**
+**多 Anchor 高可用（[NPS-CR-0009](https://github.com/labacacia/NPS/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md)，NDP §9）。**
 `AnnounceFrame.cluster_epoch`（uint64，缺省视为 `1`）已接受并持久化；
 解析 `cluster_anchor` NID 时返回 epoch **最高**的存活 Anchor；两个存活
 Anchor 持平 epoch 属脑裂故障，报 `NDP-CLUSTER-SPLIT`（`NPS-CLIENT-CONFLICT`，
@@ -61,7 +61,7 @@ docker run --rm -p 17436:17436 \
 
 | 变量 | 默认值 | 用途 |
 |-----|------|-----|
-| `NPSREGISTRY_PORT` | `17436` | bind TCP 端口。NDP 可选独立端口，见 [NPS-4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.cn.md)。|
+| `NPSREGISTRY_PORT` | `17436` | bind TCP 端口。NDP 可选独立端口，见 [NPS-4](https://github.com/labacacia/NPS/blob/main/spec/NPS-4-NDP.cn.md)。|
 | `NPSREGISTRY_HOST` | `0.0.0.0` | bind 地址。registry 故意面向网络。|
 | `NPSREGISTRY_SQLITE_PATH` | *(内存)* | SQLite 数据库文件路径。未设置 → 临时内存存储。|
 | `NPSREGISTRY_NID` | `urn:nps:agent:nps-registry:local` | 本 registry 自身 NID。用于 NDP §9 federation 的 `ndp-forwarded-by` 成环检测。|
@@ -69,7 +69,7 @@ docker run --rm -p 17436:17436 \
 
 ## 规范引用
 
-- [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.cn.md) —— 本 daemon 实现的注册中心面所属的发现协议。
+- [NPS-4 NDP](https://github.com/labacacia/NPS/blob/main/spec/NPS-4-NDP.cn.md) —— 本 daemon 实现的注册中心面所属的发现协议。
 - [Daemon 架构 §④](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md#-nps-registry--discovery-注册中心-l2-阶段可选托管) —— 为什么 registry 独立 daemon 而不是 `npsd` 的一部分。
 
 ## 许可证

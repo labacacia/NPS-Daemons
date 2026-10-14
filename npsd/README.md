@@ -121,11 +121,11 @@ All endpoints return JSON unless noted. Errors carry `{error, status, message}` 
 
 ## Spec references
 
-- [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification this daemon targets.
-- [NPS-Node-L1 conformance suite](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — the 20 `TC-N1-*` cases this daemon is being built to pass.
+- [NPS-Node Profile](https://github.com/labacacia/NPS/blob/main/spec/services/NPS-Node-Profile.md) — the compliance specification this daemon targets.
+- [NPS-Node-L1 conformance suite](https://github.com/labacacia/NPS/blob/main/spec/services/conformance/NPS-Node-L1.md) — the 20 `TC-N1-*` cases this daemon is being built to pass.
 - [Daemon architecture](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.md) — the six-daemon, three-layer reference deployment.
-- [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md) — the wire layer.
-- [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md) — root keypair / IdentFrame semantics.
+- [NPS-1 NCP](https://github.com/labacacia/NPS/blob/main/spec/NPS-1-NCP.md) — the wire layer.
+- [NPS-3 NIP](https://github.com/labacacia/NPS/blob/main/spec/NPS-3-NIP.md) — root keypair / IdentFrame semantics.
 
 ## License
 

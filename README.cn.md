@@ -30,15 +30,10 @@ README —— 共享发布节奏、共享基础镜像，但独立构建独立发
 
 ### 不在本仓的部分
 
-NPS 三层中的**信任锚 / 云** daemon 由独立的 LabAcacia 仓库维护，
-不会物化进本四-daemon bundle：
-
-- [`labacacia/NPS-Cloud-CA`](https://github.com/labacacia/NPS-Cloud-CA) —— 跨组织 NID 证书颁发机构 + CRL/OCSP。
-- [`labacacia/NPS-Ledger`](https://github.com/labacacia/NPS-Ledger) —— 实现 [NPS-RFC-0004](https://gitee.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md)
-  的 Certificate-Transparency 风格 NID 声誉日志。
-
-**今天**就要自托管 CA 的话用 [`labacacia/NIP-CA-Server`](https://gitee.com/labacacia/nip-ca-server)
-—— 单组织 OSS CA。
+信任锚角色由独立的
+[`labacacia/NIP-CA-Server`](https://github.com/labacacia/NIP-CA-Server)
+提供；这是当前活跃的单组织 OSS CA。原 `NPS-Cloud-CA` 与
+`NPS-Ledger` 原型仓库已经归档，只保留为设计历史，不再属于活跃发布列车。
 
 ---
 
