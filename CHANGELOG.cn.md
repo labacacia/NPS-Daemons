@@ -8,6 +8,12 @@
 
 ---
 
+## [1.0.0-alpha.20] — 发布候选，尚未发布
+
+- 有边界实验：结果资源/授权、重复schema批次、本地任务交接和易失节点转移；各语言支持范围不同，未承诺六SDK完整运行时一致性。
+- 保留与等价HTTPgzip及普通工具的真实测量；不宣称固定token、费用或速度收益。
+- 候选使用统一版本、本地CI与独立包验证；完整生产能力、beta和实际发布保持后续门槛。
+
 ## [1.0.0-alpha.19] —— 2026-09-05
 
 ### 变更
@@ -81,7 +87,7 @@
   `.msi`（Windows x64）安装包现已作为 GitHub Release Assets 与 Docker 镜像一同发布。
   每个安装包均包含自包含二进制，无需 .NET 运行时依赖。Linux 安装包注册 systemd service 单元文件；
   Windows MSI 通过 `NT SERVICE\<daemon>` 虚拟账户注册 Windows 服务。安装说明：
-  参见 [NPS Wiki — Operator Quickstart Bundle](https://github.com/labacacia/NPS-Release/wiki/Operator-Quickstart-Bundle#option-b-native-packages-systemd--windows-service)。
+  参见 [NPS Wiki — Operator Quickstart Bundle](https://github.com/labacacia/NPS/wiki/Operator-Quickstart-Bundle#option-b-native-packages-systemd--windows-service)。
 
 ### 变更
 

@@ -1,0 +1,19 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          dotnet-version: "10.0.x"
+      - name: Build services
+        run: |
+          for project in npsd/Npsd.csproj nps-ingress/NpsIngress.csproj nps-registry/NpsRegistry.csproj nps-runner/NpsRunner.csproj; do
+            dotnet build "$project" --configuration Release
+          done
+      - run: dotnet test nps-ingress/tests/NpsIngress.Tests.csproj --configuration Release
+      - run: dotnet test nps-runner/tests/NpsRunner.Tests.csproj --configuration Release
