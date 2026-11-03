@@ -8,6 +8,12 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [1.0.0-alpha.20] — Release candidate, unpublished
+
+- Bounded experimental result resources/authorization, repeated-schema batches, local task handoff and volatile node transfer. Language support differs; full six-SDK runtime parity is not qualified.
+- Preserve measured comparisons with equivalent HTTPgzip and ordinary tools; no universal token, fee or speed benefit is claimed.
+- Align candidate versions and local CI/package verification. Full production, beta and actual publication remain separate gates.
+
 ## [1.0.0-alpha.19] — 2026-09-05
 
 ### Changed
