@@ -8,6 +8,12 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 
 ---
 
+## [1.0.0-alpha.20] — Release candidate, unpublished
+
+- Bounded experimental result resources/authorization, repeated-schema batches, local task handoff and volatile node transfer. Language support differs; full six-SDK runtime parity is not qualified.
+- Preserve measured comparisons with equivalent HTTPgzip and ordinary tools; no universal token, fee or speed benefit is claimed.
+- Align candidate versions and local CI/package verification. Full production, beta and actual publication remain separate gates.
+
 ## [1.0.0-alpha.19] — 2026-09-05
 
 ### Changed
@@ -82,7 +88,7 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
   Docker images. Each package installs as a self-contained binary with no .NET runtime
   dependency. Linux packages register a systemd service unit; the Windows MSI registers a
   Windows service under a `NT SERVICE\<daemon>` virtual account. Install instructions:
-  see the [NPS Wiki — Operator Quickstart Bundle](https://github.com/labacacia/NPS-Release/wiki/Operator-Quickstart-Bundle#option-b-native-packages-systemd--windows-service).
+  see the [NPS Wiki — Operator Quickstart Bundle](https://github.com/labacacia/NPS/wiki/Operator-Quickstart-Bundle#option-b-native-packages-systemd--windows-service).
 
 ### Changed
 
@@ -100,7 +106,7 @@ Until NPS reaches v1.0 stable, every repository in the suite is synchronized to 
 - **`docker-compose.yml`** — all image tags bumped from
   `1.0.0-alpha.4` → `1.0.0-alpha.5`.
 
-See [NPS-Release CHANGELOG](https://github.com/labacacia/NPS-Release/blob/main/CHANGELOG.md)
+See [NPS-Release CHANGELOG](https://github.com/labacacia/NPS/blob/main/CHANGELOG.md)
 for the full suite-level rollup.
 
 ---
@@ -150,7 +156,7 @@ This release rolls up suite-wide protocol changes that landed in NPS
 Still phase-1 skeletons in this release: `nps-runner`, `nps-ingress`
 (no functional change since alpha.3).
 
-See [`NPS-Release/CHANGELOG.md`](https://github.com/labacacia/NPS-Release/blob/main/CHANGELOG.md)
+See [`NPS-Release/CHANGELOG.md`](https://github.com/labacacia/NPS/blob/main/CHANGELOG.md)
 for the full suite-level rollup.
 
 ---
@@ -216,7 +222,7 @@ This release rolls up suite-wide protocol changes that landed in NPS
 - **CR-0001** — Anchor + Bridge Node split (`nps-ingress` is wired
   against the new `LabAcacia.NPS.NWP.Anchor` package).
 
-See [`NPS-Release/CHANGELOG.md`](https://github.com/labacacia/NPS-Release/blob/main/CHANGELOG.md)
+See [`NPS-Release/CHANGELOG.md`](https://github.com/labacacia/NPS/blob/main/CHANGELOG.md)
 for the full suite-level rollup.
 
 ---

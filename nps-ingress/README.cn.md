@@ -38,7 +38,7 @@ dotnet test tools/daemons/nps-ingress/tests/NpsIngress.Tests.csproj
 ## 命名说明
 
 这是**进程**名 `nps-ingress`。规范层的“把 NPS 帧路由进 NOP 的集群控制平面”
-角色已由 [NPS-CR-0001](https://gitee.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md)
+角色已由 [NPS-CR-0001](https://github.com/labacacia/NPS/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md)
 重命名为 **Anchor Node**。该进程 MAY 承载 `NPS.NWP.Anchor` 中间件；
 alpha.18 尚未实现该接入。
 

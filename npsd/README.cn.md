@@ -6,7 +6,7 @@
 > 持有主机的 root Ed25519 keypair，按需为本机 agent 签发 sub-NID，
 > 并为 ephemeral agent 提供持久 per-NID inbox 与带签名的 NDP 存活广播。
 > 完整六 daemon 拓扑见
-> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md)。
+> [`docs/daemons/architecture.cn.md`](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md)。
 
 ## 这个二进制做什么
 
@@ -120,11 +120,11 @@ docker run --rm -p 17433:17433 \
 
 ## 规范参考
 
-- [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.cn.md) —— 本 daemon 对照构建的合规规范。
-- [NPS-Node-L1 合规](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
-- [Daemon 架构](https://github.com/labacacia/NPS-Daemons/blob/main/docs/architecture.cn.md) —— 六 daemon、三层参考部署。
-- [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.cn.md) —— 线层。
-- [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.cn.md) —— root keypair / IdentFrame 语义。
+- [NPS-Node Profile](https://github.com/labacacia/NPS/blob/main/spec/services/NPS-Node-Profile.cn.md) —— 本 daemon 对照构建的合规规范。
+- [NPS-Node-L1 合规](https://github.com/labacacia/NPS/blob/main/spec/services/conformance/NPS-Node-L1.cn.md) —— 20 个 `TC-N1-*` 用例。
+- [Daemon 架构](https://github.com/labacacia/nps-daemons/blob/main/docs/architecture.cn.md) —— 六 daemon、三层参考部署。
+- [NPS-1 NCP](https://github.com/labacacia/NPS/blob/main/spec/NPS-1-NCP.cn.md) —— 线层。
+- [NPS-3 NIP](https://github.com/labacacia/NPS/blob/main/spec/NPS-3-NIP.cn.md) —— root keypair / IdentFrame 语义。
 
 ## License
 
